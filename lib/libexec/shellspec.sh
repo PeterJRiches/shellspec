@@ -115,15 +115,21 @@ current_shell() {
   cmdline=$(read_cmdline "/proc/$2/cmdline")
   [ "$cmdline" ] || cmdline=$(read_ps "$2")
 
-  echo "${cmdline%% $self*}"
+  # shellcheck disable=SC2295
+  cmdline=${cmdline%% $self*}
+  # workaround for OpenBSD >= 7.2 (ps -f)
+  case $cmdline in ([\`\|]--\ * | -\ *) cmdline=${cmdline##*\ }; esac
+  echo "$cmdline"
 }
 
+# shellcheck disable=SC2295
 command_path() {
-  if [ $# -lt 2 ]; then
-    set -- "" "$1" "${PATH}${SHELLSPEC_PATHSEP}"
-  else
-    set -- "$1" "$2" "${PATH}${SHELLSPEC_PATHSEP}"
-  fi
+  case $# in
+    0 | 1) set -- "" "$1" ;;
+    *) set -- "$1" "$2" ;;
+  esac
+  set -- "$1" "$2" "$PATH" "$SHELLSPEC_POSIX_PATH" "$SHELLSPEC_PATHSEP"
+  set -- "$1" "$2" "${3}${4:+"$5"}${4}${5}"
 
   case $2 in (*/*)
     [ -x "$2" ] || return 1
@@ -148,7 +154,7 @@ setup_load_path() {
     SHELLSPEC_LOAD_PATH="${1}${SHELLSPEC_PATHSEP}${SHELLSPEC_LOAD_PATH}"
     shift
   done
-  SHELLSPEC_LOAD_PATH=${SHELLSPEC_LOAD_PATH%$SHELLSPEC_PATHSEP}
+  SHELLSPEC_LOAD_PATH=${SHELLSPEC_LOAD_PATH%"$SHELLSPEC_PATHSEP"}
 }
 
 finddirs() {

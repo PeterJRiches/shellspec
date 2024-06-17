@@ -4,7 +4,7 @@
 
 Use `contrib/all.sh` to test on all installed shells.
 
-Usage: `contrib/all.sh [COMMNAD (shellspec and etc)]`
+Usage: `contrib/all.sh [COMMAND (shellspec and etc)]`
 
 ## contrib/test_in_docker.sh
 
@@ -21,9 +21,9 @@ Use `contrib/check.sh` to check syntax on the whole project (requires docker).
 
 Usage: `contrib/check.sh`
 
-## contrib/installr_test.sh
+## contrib/installer_test.sh
 
-`contrib/installr_test.sh` is useful for creating a test environment for the
+`contrib/installer_test.sh` is useful for creating a test environment for the
 installer (requires docker).
 
-Usage: `contrib/installr_test.sh`
+Usage: `contrib/installer_test.sh`

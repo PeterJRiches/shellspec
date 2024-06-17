@@ -25,7 +25,12 @@ shellspec_evaluation_to_stderr() {
 shellspec_evaluation_to_xtrace() {
   # shellcheck disable=SC2153
   set -- "$SHELLSPEC_XTRACEFD" SHELLSPEC_XTRACE_FILE "$@"
-  eval "shellspec_evaluation_to_xtrace_() { \"\$@\" $1> \"\$$2\"; }"
+  SHELLSPEC_EVAL="
+    shellspec_evaluation_to_xtrace_() { \
+      exec $1>\"\$$2\"; \"\$@\"; set -- \$?; exec $1>&-; return \"\$1\"; \
+    }
+  "
+  eval "$SHELLSPEC_EVAL"
   shift 2
   shellspec_evaluation_to_xtrace_ "$@"
 }
@@ -250,6 +255,7 @@ shellspec_interceptor() {
   done
   shift 2
   case $SHELLSPEC_INTERCEPTOR in (*\|$1:*)
+    # shellcheck disable=SC2295
     eval "shift; set -- \"${SHELLSPEC_INTERCEPTOR##*\|$1:}\" ${2:+\"\$@\"}"
     eval "shift; set -- \"${1%%\|*}\" ${2:+\"\$@\"}"
     "$@"
@@ -257,11 +263,10 @@ shellspec_interceptor() {
 }
 
 shellspec_evaluation_cleanup() {
-  SHELLSPEC_STATUS=$1 SHELLSPEC_STDOUT='' SHELLSPEC_STDERR=''
-  [ "$SHELLSPEC_XTRACE" ] && [ "$SHELLSPEC_XTRACEFD" -eq 2 ] && return 0
-  shellspec_readfile SHELLSPEC_STDOUT "$SHELLSPEC_STDOUT_FILE"
-  shellspec_readfile SHELLSPEC_STDERR "$SHELLSPEC_STDERR_FILE"
+  SHELLSPEC_STATUS=$1
+  unset SHELLSPEC_STDOUT SHELLSPEC_STDERR ||:
+  [ "$SHELLSPEC_XTRACE" ] && [ "$SHELLSPEC_XTRACEFD" = 2 ] && return 0
   shellspec_toggle UNHANDLED_STATUS [ "$SHELLSPEC_STATUS" -ne 0 ]
-  shellspec_toggle UNHANDLED_STDOUT [ "$SHELLSPEC_STDOUT" ]
-  shellspec_toggle UNHANDLED_STDERR [ "$SHELLSPEC_STDERR" ]
+  shellspec_toggle UNHANDLED_STDOUT [ -s "$SHELLSPEC_STDOUT_FILE" ]
+  shellspec_toggle UNHANDLED_STDERR [ -s "$SHELLSPEC_STDERR_FILE" ]
 }

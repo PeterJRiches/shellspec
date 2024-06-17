@@ -2,8 +2,8 @@
 
 # shellcheck source=lib/libexec.sh
 . "${SHELLSPEC_LIB:-./lib}/libexec.sh"
-use import constants sequence replace_all each padding trim wrap
-use is_empty_file pluralize exists_file readfile
+use import constants sequence replace_all replace_all_multiline each
+use padding trim wrap is_empty_file pluralize exists_file readfile
 
 notice() { warn "$@" 2>&1; }
 
@@ -15,17 +15,18 @@ count_examples() {
 }
 
 # $1: prefix, $2: filename
+# shellcheck disable=SC2295
 read_time_log() {
-  eval "$1_real='' $1_user='' $1_sys=''"
-  [ -r "$2" ] || return 1
-  # shellcheck disable=SC2034
-  while IFS= read -r line; do
-    case $line in (real[\ $TAB]*|user[\ $TAB]*|sys[\ $TAB]*)
-      case ${line##*[ $TAB]} in (*[!0-9.]*) continue; esac
-      eval "$1_${line%%[ $TAB]*}=\"\${line##*[ \$TAB]}\""
-    esac
-  done < "$2" &&:
-  eval "[ \"\$$1_real\" ] && [ \"\$$1_user\" ] && [ \"\$$1_sys\" ]"
+  eval "$1_real='' $1_user='' $1_sys='' $1_type=''"
+  [ -s "$2" ] || return 1
+  {
+    set -- "$1_real" "$1_user" "$1_sys" "$1_type"
+    IFS=" " read -r "$@" || return 1
+    while [ $# -gt 0 ]; do
+      eval "$1=\${$1#${1#*_}:}"
+      shift
+    done
+  } < "$2"
 }
 
 field_description() {
@@ -84,11 +85,12 @@ xmlattrs() {
 xmlcdata() {
   eval "$1=\$2"
   if [ "$2" ]; then
-    replace_all "$1" ']]>' ']]]]><![CDATA[>'
+    replace_all_multiline "$1" ']]>' ']]]]><![CDATA[>'
     eval "$1=\"<![CDATA[\${$1}]]>\""
   fi
 }
 
+# shellcheck disable=SC2295
 remove_escape_sequence() {
   while IFS= read -r line || [ "$line" ]; do
     text=''
@@ -196,16 +198,19 @@ tssv_parse() {
   tssv_buf=''
   while IFS= read -r tssv_line || [ "$tssv_line" ]; do
     case $tssv_line in
-      $RS*)
+      $RS*) tssv_buf=${tssv_line#?} ;;
+      *)
         if [ "$tssv_buf" ]; then
-          tssv_fields "$@" "$tssv_buf" || return $?
+          tssv_buf="${tssv_buf}${LF}${tssv_line}"
+        else
+          putsn "$tssv_line"
         fi
-        tssv_buf=${tssv_line#?}
-        ;;
-      *) tssv_buf="$tssv_buf${tssv_buf:+$LF}${tssv_line}"
+    esac
+    case $tssv_line in (*$ETB)
+      tssv_fields "$@" "${tssv_buf%?}" || return $?
+      tssv_buf=''
     esac
   done
-  [ ! "$tssv_buf" ] || tssv_fields "$@" "$tssv_buf"
 }
 
 tssv_fields() {

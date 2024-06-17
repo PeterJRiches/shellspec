@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % BIN: "$SHELLSPEC_HELPERDIR/fixture/bin"
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
@@ -14,6 +14,15 @@ Describe "core/evaluation.sh"
     It "reads from tty"
       When run shellspec_evaluation_from_tty cat
       The stdout should equal "tty data"
+    End
+  End
+
+  Describe "shellspec_evaluation_from_tty() with 'When I' statement"
+    prepare() { echo "tty data" > "$SHELLSPEC_STDIN_DEV"; }
+    BeforeRun 'SHELLSPEC_STDIN_DEV="$TMPBASE/tty"' prepare
+    It "reads from tty"
+        When I run shellspec_evaluation_from_tty cat
+        The stdout should equal "tty data"
     End
   End
 
@@ -53,7 +62,7 @@ Describe "core/evaluation.sh"
   End
 
   Describe 'shellspec_evaluation_to_xtrace()'
-    BeforeRun 'SHELLSPEC_XTRACEFD=1' 'SHELLSPEC_XTRACE_FILE="$TMPBASE/trace"'
+    BeforeRun 'SHELLSPEC_XTRACEFD=5' 'SHELLSPEC_XTRACE_FILE="$TMPBASE/trace"'
     AfterRun 'cat "$SHELLSPEC_XTRACE_FILE"'
     It "writes to trace file"
       When run shellspec_evaluation_to_xtrace echo "trace data"
@@ -387,6 +396,7 @@ Describe "core/evaluation.sh"
 
       Describe 'shebang arguments'
         set_fake_shell() { export SHELLSPEC_SHELL="$SHELLSPEC_PRINTF '%s\n'"; }
+        #shellcheck shell=sh disable=SC2276
         shellspec_shebang_arguments() { %= "-u -u -u -u"; }
         Before set_fake_shell
 

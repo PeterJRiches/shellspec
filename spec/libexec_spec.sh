@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016,SC2004
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
 % INFILE: "$SHELLSPEC_HELPERDIR/fixture/infile"
@@ -209,7 +209,7 @@ Describe 'libexec.sh'
   End
 
   Describe "timeout()"
-    sleep() { "$SHELLSPEC_ENV" sleep 0; }
+    sleep() { shellspec_nap; }
     _timeout() { { ( sleep 1 ) & timeout 0 $!; } 2>/dev/null; }
     It "stops when timed out"
       When call _timeout 1

@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2004,SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
 % LIB: "$SHELLSPEC_HELPERDIR/fixture/lib"
@@ -52,13 +52,8 @@ Describe "core/dsl.sh"
     mock() { shellspec_output() { echo "$1"; }; }
     BeforeRun mock
 
-    It 'does not output METADATA if not supplied flag'
+    It 'outputs METADATA'
       When run shellspec_metadata
-      The stdout should not include 'METADATA'
-    End
-
-    It 'outputs METADATA if supplied flag'
-      When run shellspec_metadata 1
       The stdout should eq 'METADATA'
     End
   End
@@ -67,13 +62,8 @@ Describe "core/dsl.sh"
     mock() { shellspec_output() { echo "$1"; }; }
     BeforeRun mock
 
-    It 'does not output FINISHED if not supplied flag'
+    It 'outputs FINISHED'
       When run shellspec_finished
-      The stdout should not include 'FINISHED'
-    End
-
-    It 'outputs FINISHED if supplied flag'
-      When run shellspec_finished 1
       The stdout should eq 'FINISHED'
     End
   End
@@ -228,6 +218,18 @@ Describe "core/dsl.sh"
     End
   End
 
+  Describe "shellspec_after_block()"
+    mock() {
+      shellspec_call_after_hooks() { echo "$@"; }
+    }
+    BeforeRun mock
+
+    It 'calls after mock hooks'
+      When run shellspec_after_block
+      The stdout should eq "MOCK"
+    End
+  End
+
   Describe "shellspec_end()"
     mock() { shellspec_output() { echo "$1"; }; }
     echo_example_count() { echo "$SHELLSPEC_EXAMPLE_COUNT"; }
@@ -311,8 +313,8 @@ Describe "core/dsl.sh"
       SHELLSPEC_STDIO_FILE_BASE=1-2-3
     }
     check() {
-      echo $SHELLSPEC_EXAMPLE_NO
-      echo $SHELLSPEC_STDIO_FILE_BASE
+      echo "$SHELLSPEC_EXAMPLE_NO"
+      echo "$SHELLSPEC_STDIO_FILE_BASE"
     }
     BeforeRun setup
     AfterRun check
@@ -467,10 +469,12 @@ Describe "core/dsl.sh"
   End
 
   Describe "shellspec_invoke_example()"
-    expectation() { shellspec_on EXPECTATION; shellspec_off NOT_IMPLEMENTED; }
+    expectation() { shellspec_off NOT_IMPLEMENTED NO_EXPECTATION; }
     mock() {
+      dsl_check=1
       shellspec_output() { echo "$1"; }
       shellspec_yield0() { echo "yield $#"; block; }
+      shellspec_dsl_check() { [ "$dsl_check" ]; }
     }
     BeforeRun SHELLSPEC_BLOCK_NO=0 mock
 
@@ -490,6 +494,14 @@ Describe "core/dsl.sh"
       The stdout line 2 should equal 'HOOK_ERROR'
       The stdout line 3 should equal 'FAILED'
     End
+
+    It 'fails if dsl_check error occurred'
+      BeforeRun dsl_check=''
+      When run shellspec_invoke_example
+      The stdout line 1 should equal 'EXAMPLE'
+      The stdout line 2 should equal 'ERROR'
+    End
+
 
     It 'skipps the rest if skipped inside of example'
       block() { shellspec_skip 1; }
@@ -635,6 +647,55 @@ Describe "core/dsl.sh"
     End
   End
 
+  Describe "shellspec_dsl_check()"
+    mock() {
+      shellspec_fds_check() { echo "fds_check"; }
+    }
+    BeforeRun mock
+
+    It 'calls shellspec_fds_check'
+      When run shellspec_dsl_check
+      The line 1 of stdout should eq "fds_check"
+    End
+  End
+
+  Describe "shellspec_fds_check()"
+    mock() {
+      shellspec_output() { echo "$@"; }
+    }
+    BeforeRun mock
+    BeforeRun SHELLSPEC_FDVAR_AVAILABLE=''
+
+    It 'passes the check when give the correct fd'
+      BeforeRun SHELLSPEC_USE_FDS=3:4
+      When run shellspec_fds_check
+      The status should be success
+    End
+
+    It 'not passes the check when give the incorrect fd'
+      BeforeRun SHELLSPEC_USE_FDS=@
+      When run shellspec_fds_check
+      The output should eq "DSL_ERROR UseFD: Invalid file descriptor: @"
+      The status should be failure
+    End
+
+    It 'not passes the check when give the fd variable name'
+      BeforeRun SHELLSPEC_USE_FDS=FD
+      When run shellspec_fds_check
+      The output should eq "DSL_ERROR UseFD: Assigning file descriptors to variables is not supported in the current shell"
+      The status should be failure
+    End
+
+    Context "For shells that can assign file descriptors to variables"
+      BeforeRun SHELLSPEC_FDVAR_AVAILABLE=1
+      It 'passes the check when give the fd variable name'
+        BeforeRun SHELLSPEC_USE_FDS=FD
+        When run shellspec_fds_check
+        The status should be success
+      End
+    End
+  End
+
   Describe "shellspec_around_call()"
     _around_call() {
       shellspec_call_before_evaluation_hooks() { echo "before" "$@"; }
@@ -653,7 +714,7 @@ Describe "core/dsl.sh"
       The line 3 of stdout should eq "after CALL"
     End
 
-    Context "when error occured in before evaluation"
+    Context "when error occurred in before evaluation"
       _around_call() {
         # shellcheck disable=SC2034
         SHELLSPEC_HOOK="hook name"
@@ -675,7 +736,7 @@ Describe "core/dsl.sh"
       End
     End
 
-    Context "when error occured in after evaluation"
+    Context "when error occurred in after evaluation"
       _around_call() {
         # shellcheck disable=SC2034
         SHELLSPEC_HOOK="hook name"
@@ -716,7 +777,7 @@ Describe "core/dsl.sh"
       The line 3 of stdout should eq "after RUN"
     End
 
-    Context "when error occured in before evaluation"
+    Context "when error occurred in before evaluation"
       _around_run() {
         # shellcheck disable=SC2034
         SHELLSPEC_HOOK="hook name"
@@ -738,7 +799,7 @@ Describe "core/dsl.sh"
       End
     End
 
-    Context "when error occured in after evaluation"
+    Context "when error occurred in after evaluation"
       _around_run() {
         # shellcheck disable=SC2034
         SHELLSPEC_HOOK="hook name"
@@ -763,8 +824,8 @@ Describe "core/dsl.sh"
 
   Describe "shellspec_when()"
     init() {
-      shellspec_off EVALUATION EXPECTATION
-      shellspec_on NOT_IMPLEMENTED
+      shellspec_off EVALUATION
+      shellspec_on NOT_IMPLEMENTED NO_EXPECTATION
     }
 
     mock() {
@@ -810,7 +871,7 @@ Describe "core/dsl.sh"
     End
 
     It 'is syntax error when already executed expectation'
-      prepare() { shellspec_on EXPECTATION; }
+      prepare() { shellspec_off NO_EXPECTATION; }
       BeforeRun init prepare mock
       When run shellspec_when
       The stdout should include 'off:NOT_IMPLEMENTED'
@@ -857,16 +918,15 @@ Describe "core/dsl.sh"
     mock() {
       shellspec_statement_preposition() { echo expectation; }
       shellspec_output() { echo "output:$1"; }
-      eval 'shellspec_on() { echo "on:$*"; }'
-      eval 'shellspec_off() { echo "off:$*"; }'
+      eval 'shellspec_on() { echo "on:$@"; }'
+      eval 'shellspec_off() { echo "off:$@"; }'
     }
 
     It 'calls expectation'
       BeforeRun prepare mock
       When run shellspec_the expectation
       The stdout should not include 'output:SYNTAX_ERROR_EXPECTATION'
-      The stdout should include 'off:NOT_IMPLEMENTED'
-      The stdout should include 'on:EXPECTATION'
+      The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
       The stdout should not include 'on:FAILED'
       The stdout should include 'expectation'
     End
@@ -875,8 +935,7 @@ Describe "core/dsl.sh"
       BeforeRun prepare mock
       When run shellspec_the
       The stdout should include 'output:SYNTAX_ERROR_EXPECTATION'
-      The stdout should include 'off:NOT_IMPLEMENTED'
-      The stdout should include 'on:EXPECTATION'
+      The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
       The stdout should include 'on:FAILED'
       The stdout should not include 'expectation'
     End
@@ -887,8 +946,8 @@ Describe "core/dsl.sh"
 
     mock() {
       shellspec_output() { echo "output:$1"; }
-      eval 'shellspec_on() { echo "on:$*"; }'
-      eval 'shellspec_off() { echo "off:$*"; }'
+      eval 'shellspec_on() { echo "on:$@"; }'
+      eval 'shellspec_off() { echo "off:$@"; }'
     }
 
     Context "when errexit on"
@@ -896,8 +955,7 @@ Describe "core/dsl.sh"
       It 'output unmatch when assertion succeeds'
         BeforeRun prepare mock
         When run shellspec_assert echo ok
-        The stdout should include 'off:NOT_IMPLEMENTED'
-        The stdout should include 'on:EXPECTATION'
+        The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
         The stdout should include 'output:MATCHED'
         The stdout should include 'ok'
       End
@@ -908,8 +966,7 @@ Describe "core/dsl.sh"
       It 'output unmatch when assertion succeeds'
         BeforeRun prepare mock
         When run shellspec_assert echo ok
-        The stdout should include 'off:NOT_IMPLEMENTED'
-        The stdout should include 'on:EXPECTATION'
+        The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
         The stdout should include 'output:MATCHED'
         The stdout should include 'ok'
       End
@@ -918,8 +975,7 @@ Describe "core/dsl.sh"
     It 'output unmatch when assertion fails'
       BeforeRun prepare mock
       When run shellspec_assert false
-      The stdout should include 'off:NOT_IMPLEMENTED'
-      The stdout should include 'on:EXPECTATION'
+      The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
       The stdout should include 'on:FAILED'
       The stdout should include 'output:ASSERT_ERROR'
     End
@@ -928,8 +984,7 @@ Describe "core/dsl.sh"
       warn() { echo warn >&2; return 0; }
       BeforeRun prepare mock
       When run shellspec_assert warn
-      The stdout should include 'off:NOT_IMPLEMENTED'
-      The stdout should include 'on:EXPECTATION'
+      The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
       The stdout should include 'on:WARNED'
       The stdout should include 'output:ASSERT_WARN'
     End
@@ -938,8 +993,7 @@ Describe "core/dsl.sh"
       BeforeRun prepare mock
       When run shellspec_assert
       The stdout should include 'output:SYNTAX_ERROR_EXPECTATION'
-      The stdout should include 'off:NOT_IMPLEMENTED'
-      The stdout should include 'on:EXPECTATION'
+      The stdout should include 'off:NOT_IMPLEMENTED NO_EXPECTATION'
       The stdout should include 'on:FAILED'
       The stdout should not include 'ok'
     End
@@ -1084,6 +1138,12 @@ Describe "core/dsl.sh"
       BeforeCall SHELLSPEC_LOGFILE=/dev/null
       When call shellspec_logger "logger test"
       The stdout should eq "sleep"
+    End
+
+    It 'outputs to stdout when SHELLSPEC_LOGFILE not specified'
+      BeforeCall SHELLSPEC_LOGFILE=''
+      When call shellspec_logger "logger test"
+      The stdout should eq "logger test"
     End
   End
 
@@ -1423,33 +1483,51 @@ Describe "core/dsl.sh"
   End
 
   Describe "shellspec_dump()"
-    BeforeRun SHELLSPEC_STDOUT=stdout
-    BeforeRun SHELLSPEC_STDERR=stderr
+    BeforeRun SHELLSPEC_STDOUT=stdout SHELLSPEC_STDERR=stderr
     BeforeRun SHELLSPEC_STATUS=123
+    BeforeRun SHELLSPEC_SPECFILE=specfile SHELLSPEC_AUX_LINENO=10
+    BeforeRun SHELLSPEC_FD_3=fd3 SHELLSPEC_FD_AA=fdaa
+    BeforeRun SHELLSPEC_USE_FDS=3:AA:
 
     It 'dumps stdout/stderr/status'
       When run shellspec_dump
-      The line 2 of stdout should eq "[stdout]"
-      The line 3 of stdout should eq "stdout"
-      The line 4 of stdout should eq "[stderr]"
-      The line 5 of stdout should eq "stderr"
-      The line 6 of stdout should eq "[status] 123"
+      The line 1 should eq ""
+      The line 2 should eq "[Dump] specfile:10 (exit status: 123)"
+      The line 3 should eq "- stdout:"
+      The line 4 should eq "stdout"
+      The line 5 should eq "- stderr:"
+      The line 6 should eq "stderr"
+      The line 7 should eq "- fd 3:"
+      The line 8 should eq "fd3"
+      The line 9 should eq "- fd AA:"
+      The line 10 should eq "fdaa"
+      The lines of stdout should eq 10
+    End
+  End
+
+  Describe "shellspec_dump_file()"
+    BeforeRun mock
+
+    It 'dumps <unset> when the file not exist'
+      mock() { shellspec_readfile_once() { unset "$1" ||:; }; }
+      When run shellspec_dump_file var VAR varfile
+      The line 1 should eq ""
+      The line 2 should eq "- var: <unset>"
     End
 
-    Context "when unset"
-      setup() {
-        unset SHELLSPEC_STDOUT ||:
-        unset SHELLSPEC_STDERR ||:
-        unset SHELLSPEC_STATUS ||:
-      }
-      BeforeRun setup
+    It 'dumps <empty> when the file is empty'
+      mock() { shellspec_readfile_once() { eval "$1=''"; }; }
+      When run shellspec_dump_file var VAR varfile
+      The line 1 should eq ""
+      The line 2 should eq "- var: <empty>"
+    End
 
-      It 'dumps stdout/stderr/status'
-        When run shellspec_dump
-        The line 2 of stdout should eq "[stdout] <unset>"
-        The line 3 of stdout should eq "[stderr] <unset>"
-        The line 4 of stdout should eq "[status] <unset>"
-      End
+    It 'dumps data when the file is not empty'
+      mock() { shellspec_readfile_once() { eval "$1='data'"; }; }
+      When run shellspec_dump_file var VAR varfile
+      The line 1 should eq ""
+      The line 2 should eq "- var:"
+      The line 3 should eq "data"
     End
   End
 
@@ -1537,6 +1615,17 @@ Describe "core/dsl.sh"
       When run shellspec_unmock fourth-mock
       The line 1 should eq "rm $MOCKDIR/fourth-mock"
       The line 2 should eq "mv $MOCKDIR/fourth-mock#2 $MOCKDIR/fourth-mock"
+    End
+  End
+
+  Describe "shellspec_usefd()"
+    preserve() { %preserve SHELLSPEC_USE_FDS:USE_FDS; }
+    BeforeRun SHELLSPEC_USE_FDS=1
+    AfterRun preserve
+
+    It 'appends to the SHELLSPEC_USE_FDS variable'
+      When run shellspec_usefd 2
+      The variable USE_FDS should eq "1:2"
     End
   End
 End

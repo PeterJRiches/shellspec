@@ -1,17 +1,17 @@
-#shellcheck shell=sh disable=SC2016,SC2021
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 Describe '%text'
   It 'outputs to stdout'
     foo() {
       %text
-      #|aaa
+      #|aaa\
       #|bbb
       #|ccc
       #|
     }
 
     When call foo
-    The line 1 of entire output should eq 'aaa'
+    The line 1 of entire output should eq "aaa\\"
     The line 2 of entire output should eq 'bbb'
     The line 3 of entire output should eq "ccc"
     The line 4 of entire output should eq ""

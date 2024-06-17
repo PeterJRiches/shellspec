@@ -7,14 +7,13 @@ use sequence
 worker() {
   job() {
     # posh 0.10.2 workaround: uses mkdir instead of set -C
-    (mkdir "$SHELLSPEC_JOBDIR/$1.lock") 2>/dev/null || return 0
-    IFS= read -r specfile < "$SHELLSPEC_JOBDIR/$1.job"
+    jobfile="$SHELLSPEC_JOBDIR/$1"
+    ( mkdir "$jobfile.lock" ) 2>/dev/null || return 0
+    IFS= read -r specfile < "$jobfile.job"
     translator --no-metadata --no-finished --spec-no="$1" "$specfile" \
-      | eval "\$SHELLSPEC_SHELL" \
-        "$SHELLSPEC_OUTPUT_FD> \"\$SHELLSPEC_JOBDIR/\$1.stdout\"" \
-        "2> \"\$SHELLSPEC_JOBDIR/\$1.stderr\" &&:" &&:
-    echo "$?" > "$SHELLSPEC_JOBDIR/$1.status"
-    : > "$SHELLSPEC_JOBDIR/$1.done"
+      | $SHELLSPEC_SHELL >"$jobfile.stdout" 2>"$jobfile.stderr" &&:
+    echo "$?" > "$jobfile.status"
+    : > "$jobfile.done"
   }
   sequence job 1 "$2"
 }
@@ -22,11 +21,12 @@ worker() {
 reduce() {
   i=0
   while [ $i -lt "$1" ] && i=$(($i + 1)); do
-    sleep_wait_until [ -e "$SHELLSPEC_JOBDIR/$i.done" ]
+    jobfile="$SHELLSPEC_JOBDIR/$i"
+    sleep_wait_until [ -e "$jobfile.done" ]
     # shellcheck disable=SC2039,SC3021
-    cat "$SHELLSPEC_JOBDIR/$i.stdout" >&"$SHELLSPEC_OUTPUT_FD"
-    cat "$SHELLSPEC_JOBDIR/$i.stderr" >&2
-    read -r exit_status < "$SHELLSPEC_JOBDIR/$i.status"
+    cat "$jobfile.stdout"
+    cat "$jobfile.stderr" >&2
+    read -r exit_status < "$jobfile.status"
     [ "$exit_status" -eq 0 ] || exit "$exit_status"
   done
 }
@@ -47,14 +47,10 @@ executor() {
   create_workdirs "$jobs"
 
   translator --no-finished | $SHELLSPEC_SHELL # output only metadata
-  # Workaround for osh: Use FD3 to avoid display "Started PID"
-  callback() {
-    { worker "$1" "$jobs" 2>&3 & } 3>&2 2>/dev/null
-    workers="$workers $!"
-  }
+  callback() { worker "$1" "$jobs" & nap; workers="$workers $!"; }
   sequence callback 1 "$SHELLSPEC_WORKERS"
-  (reduce "$jobs") &&:
-  eval "[ $? -ne 0 ] && return $?"
+  ( reduce "$jobs" ) &&:
+  eval "[ $? -eq 0 ] || return $?"
   translator --no-metadata | $SHELLSPEC_SHELL # output only finished
 }
 

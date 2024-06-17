@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % BIN: "$SHELLSPEC_HELPERDIR/fixture/bin"
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
@@ -256,24 +256,26 @@ Describe "general.sh"
   End
 
   Describe 'shellspec_putsn()'
+    lf="$SHELLSPEC_LF"
+
     It 'does not output anything without arguments'
       When call shellspec_putsn
-      The entire stdout should equal "${IFS%?}"
+      The entire stdout should equal "${lf}"
     End
 
     It 'outputs append with LF'
       When call shellspec_putsn "a"
-      The entire stdout should equal "a${IFS%?}"
+      The entire stdout should equal "a${lf}"
     End
 
     It 'joins arguments with space and outputs append with LF'
       When call shellspec_putsn "a" "b"
-      The entire stdout should equal "a b${IFS%?}"
+      The entire stdout should equal "a b${lf}"
     End
 
     It 'outputs with raw string append with LF'
       When call shellspec_putsn 'a\b'
-      The entire stdout should equal "a\\b${IFS%?}"
+      The entire stdout should equal "a\\b${lf}"
       The length of entire stdout should equal 4
     End
 
@@ -281,7 +283,7 @@ Describe "general.sh"
       It 'joins arguments with spaces'
         BeforeRun 'IFS=@'
         When run shellspec_putsn a b c
-        The entire stdout should equal "a b c${IFS%?}"
+        The entire stdout should equal "a b c${lf}"
       End
     End
   End
@@ -484,6 +486,47 @@ Describe "general.sh"
     End
   End
 
+  Describe "shellspec_replace_all_multiline()"
+    Before setup
+    Context "when does not end a with newline"
+      setup() {
+        # shellcheck disable=SC2034
+        text=$(printf '%s@\n' foo bar baz)
+      }
+      It "replaces multiple lines"
+        When call shellspec_replace_all_multiline text "@" "%"
+        The line 1 of variable text should eq "foo%"
+        The line 2 of variable text should eq "bar%"
+        The line 3 of variable text should eq "baz%"
+        The line 4 of variable text should be undefined
+      End
+    End
+
+    Context "when end with a newline"
+      setup() {
+        # shellcheck disable=SC2034
+        text="$(printf '%s@\n' foo bar baz)${SHELLSPEC_LF}${SHELLSPEC_LF}"
+      }
+      It "replaces multiple lines"
+        When call shellspec_replace_all_multiline text "@" "%"
+        The line 1 of variable text should eq "foo%"
+        The line 2 of variable text should eq "bar%"
+        The line 3 of variable text should eq "baz%"
+        The line 4 of variable text should eq ""
+      End
+    End
+
+    Context "when the replacement string contains a newline"
+      # shellcheck disable=SC2034
+      setup() { text="@"; }
+      It "raises error"
+        When run shellspec_replace_all_multiline text "@$SHELLSPEC_LF" "%"
+        The status should be failure
+        The error should eq "shellspec_replace_all_multiline: newline replacement is not supported"
+      End
+    End
+  End
+
   Describe "shellspec_includes()"
     lf=$SHELLSPEC_LF tab=$SHELLSPEC_TAB vt=$SHELLSPEC_VT cr=$SHELLSPEC_CR
 
@@ -654,9 +697,44 @@ Describe "general.sh"
   End
 
   Describe 'shellspec_readfile()'
+    Before var=dummy
+
     It 'reads the file as is'
       When call shellspec_readfile var "$FIXTURE/end-with-multiple-lf.txt"
-      The variable var should equal "a${IFS%?}${IFS%?}"
+      The variable var should equal "a${SHELLSPEC_LF}${SHELLSPEC_LF}"
+    End
+
+    It 'reads the file as is'
+      When call shellspec_readfile var "$FIXTURE/end-without-lf.txt"
+      The variable var should equal "foo\\${SHELLSPEC_LF}bar"
+    End
+
+    It 'unsets the variable when the file does not exist'
+      When call shellspec_readfile var "$FIXTURE/no-such-a-file.txt"
+      The variable var should be undefined
+    End
+  End
+
+  Describe 'shellspec_readfile_once()'
+    mock() {
+      shellspec_readfile() { echo "readfile" "$@"; }
+    }
+    BeforeRun mock
+
+    Context "when the variable is undefined"
+      Before "unset var ||:"
+      It 'reads the file'
+        When run shellspec_readfile_once var "file"
+        The output should eq "readfile var file"
+      End
+    End
+
+    Context "when the variable is defined"
+      Before "var=''"
+      It 'does not read the file'
+        When run shellspec_readfile_once var "file"
+        The output should be blank
+      End
     End
   End
 
@@ -664,6 +742,33 @@ Describe "general.sh"
     It 'reads the file without trailing LF'
       When call shellspec_capturefile var "$FIXTURE/end-with-multiple-lf.txt"
       The variable var should equal "a"
+    End
+
+    It 'reads the file as is'
+      When call shellspec_capturefile var "$FIXTURE/end-without-lf.txt"
+      The variable var should equal "foo\\${SHELLSPEC_LF}bar"
+    End
+  End
+
+  Describe 'shellspec_head()'
+    Data
+      #|line1
+      #|line2
+      #|line3
+      #|line4
+      #|line5
+    End
+
+    Parameters
+      4 4 "line4" 5 eq "..."
+      5 5 "line5" 6 be undefined
+      6 5 "line5" 6 be undefined
+    End
+
+    It 'reads the specified number of lines'
+      When call shellspec_head var "$1"
+      The line "$2" of variable var should eq "$3"
+      The line "$4" of variable var should "$5" "$6"
     End
   End
 
@@ -783,7 +888,7 @@ Describe "general.sh"
   End
 
   Describe "shellspec_chomp()"
-    Before "var='string${IFS%?}${IFS%?}${IFS%?}'"
+    Before "var='string${SHELLSPEC_LF}${SHELLSPEC_LF}${SHELLSPEC_LF}'"
     It "removes trailing LF"
       When call shellspec_chomp var
       The variable var should eq "string"
@@ -791,7 +896,7 @@ Describe "general.sh"
   End
 
   Describe 'shellspec_get_nth()'
-    It 'fetch nth value seperate by IFS'
+    It 'fetch nth value separate by IFS'
       When call shellspec_get_nth var "  a   b c  " 3
       The variable var should equal c
     End

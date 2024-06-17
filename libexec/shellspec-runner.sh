@@ -1,7 +1,8 @@
 #!/bin/sh
-#shellcheck disable=SC2004
 
 set -eu
+# shellcheck disable=SC3044
+shopt -u verbose_errexit 2>/dev/null ||:
 
 # shellcheck source=lib/libexec/runner.sh
 . "${SHELLSPEC_LIB:-./lib}/libexec/runner.sh"
@@ -46,7 +47,6 @@ precheck() {
   [ $# -gt 0 ] || return 0
 
   status_file=$SHELLSPEC_PRECHECKER_STATUS
-  echo "-" > "$status_file"
   for module; do
     import_path=''
     resolve_module_path import_path "$module"
@@ -66,7 +66,7 @@ executor() {
   start_profiler
   executor="$SHELLSPEC_LIBEXEC/shellspec-executor.sh"
   # shellcheck disable=SC2086
-  $SHELLSPEC_TIME $SHELLSPEC_SHELL "$executor" "$@" 3>&2 2>"$SHELLSPEC_TIME_LOG"
+  $SHELLSPEC_SHELL "$SHELLSPEC_TIME" $SHELLSPEC_SHELL "$executor" "$@"
   eval "stop_profiler; return $?"
 }
 
@@ -78,6 +78,7 @@ error_handler() {
   error_count=0
 
   while IFS= read -r line; do
+    # shellcheck disable=SC2004
     error_count=$(($error_count + 1))
     error "$line"
   done
@@ -179,54 +180,68 @@ if [ "$SHELLSPEC_BANNER" ]; then
 fi
 
 if [ "${SHELLSPEC_RANDOM:-}" ]; then
-  export SHELLSPEC_LIST=$SHELLSPEC_RANDOM
+  export SHELLSPEC_LIST="$SHELLSPEC_RANDOM"
   exec="$SHELLSPEC_LIBEXEC/shellspec-list.sh"
   eval "$SHELLSPEC_SHELL" "\"$exec\"" ${1+'"$@"'} >"$SHELLSPEC_INFILE"
   set -- -
 fi
 
+xs=0
 {
-  env=$( ( ( ( (
-    ( ( precheck "$SHELLSPEC_REQUIRES" ) &&:; echo "exit_status=$?" >&9; ) >&8
+  env=$( ( ( ( ( _do() { set +e; (set -e; "$@") 8>&- 9>&-; echo "xs=$?" >&9; }
+    _do precheck "$SHELLSPEC_REQUIRES" >&8
     ) 2>&1 | while IFS= read -r line; do error "$line"; done >&2
     ) 3>&1 | while IFS= read -r line; do warn "$line"; done >&2
     ) 4>&1 | while IFS= read -r line; do info "$line"; done >&8
   ) 9>&1 )
   eval "$env"
 } 8>&1
-[ -s "$SHELLSPEC_PRECHECKER_STATUS" ] && exit "$exit_status"
+if [ "$xs" -ne 0 ] || [ -s "$SHELLSPEC_PRECHECKER_STATUS" ]; then
+  exit "$xs"
+fi
 
-# I want to process with non-blocking output
-# and the stdout of runner streams to the reporter
-# and capture stderr both of the runner and the reporter
-# and the stderr streams to error hander
-# and also handle both exit status. As a result of
-( ( ( ( set -e; { executor "$@"; } 9>&1 >&8; echo $? >&5 ) \
-  | reporter "$@" >&3; echo $? >&5 ) 2>&1 \
-  | error_handler >&4; echo $? >&5 ) 5>&1 \
-  | (
-      read -r xs1; read -r xs2; read -r xs3
-      xs='' error='' msg="Aborted with status code"
-      for i in "$xs1" "$xs2" "$xs3"; do
-        case $i in
-          0) continue ;;
-          "$SHELLSPEC_FAILURE_EXIT_CODE") [ "$xs" ] || xs=$i ;;
-          "$SHELLSPEC_ERROR_EXIT_CODE") xs=$i error=1 && break ;;
-          *) [ "${xs#$SHELLSPEC_FAILURE_EXIT_CODE}" ] || xs=$i; error=1
-        esac
-      done
-      if [ "$error" ]; then
-        error "$msg [executor: $xs1] [reporter: $xs2] [error handler: $xs3]"
-      fi
-      set_exit_status "${xs:-0}"
-    )
-) 3>&1 4>&2 8>&1 &&:
-exit_status=$?
+xs1='' xs2='' xs3=''
+set +e
+{
+  xs=$(
+    (
+      (
+        (
+          ( set -e; executor "$@" ) 3>&- 4>&- 5>&-
+	  echo "xs1=$?" >&5
+        ) | (
+          ( set -e; reporter "$@" ) >&3 3>&- 4>&- 5>&-
+          echo "xs2=$?" >&5
+        )
+      ) 2>&1 | (
+        ( set -e; error_handler ) >&4 3>&- 4>&- 5>&-
+        echo "xs3=$?" >&5
+      )
+    ) 5>&1
+  )
+} 3>&1 4>&2
 
-case $exit_status in
+eval "$xs"
+xs='' error=''
+for i in "$xs1" "$xs2" "$xs3"; do
+  case $i in
+    0) continue ;;
+    "$SHELLSPEC_FAILURE_EXIT_CODE") [ "$xs" ] || xs=$i ;;
+    "$SHELLSPEC_ERROR_EXIT_CODE") xs=$i error=1 && break ;;
+    *) [ "${xs#"$SHELLSPEC_FAILURE_EXIT_CODE"}" ] || xs=$i; error=1
+  esac
+done
+xs=${xs:-0}
+
+if [ "$error" ]; then
+  msg="Aborted with status code"
+  error "$msg [executor: $xs1] [reporter: $xs2] [error handler: $xs3]"
+fi
+
+case $xs in
   0) ;; # Running specs exit with successfully.
   "$SHELLSPEC_FAILURE_EXIT_CODE") ;; # Running specs exit with failure.
-  *) error "Fatal error occurred, terminated with exit status $exit_status."
+  *) error "Fatal error occurred, terminated with exit status $xs."
 esac
 
-exit "$exit_status"
+exit "$xs"

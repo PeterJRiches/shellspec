@@ -113,6 +113,7 @@ components_path() {
 
 git_remote_tags() {
   git ls-remote --tags "$repo" | while read -r line; do
+    # shellcheck disable=SC2295
     tag=${line##*/} && pre=${tag#${tag%%[-+]*}}
     [ "${1:-}" = "--pre" ] || case $pre in (-*) continue; esac
     echo "${tag%\^\{\}}"
@@ -130,7 +131,7 @@ sort_by_first_key() {
 
 version_sort() {
   while read -r version; do
-    ver=${version%%+*} && num=${ver%%-*} && pre=${ver#$num}
+    ver=${version%%+*} && num=${ver%%-*} && pre=${ver#"$num"}
     #shellcheck disable=SC2086
     case $num in
       *[!0-9.]*)  set -- 0 0 0 0 ;;
@@ -165,7 +166,7 @@ latest_version() {
   get_versions | version_sort | last
 }
 
-${__SOURCED__:+return}
+${__SOURCED__:+false} : || return 0
 
 trap finished EXIT
 VERSION='' PREFIX=$HOME/.local BIN='' DIR='' SWITCH='' PRE='' YES='' FETCH=''

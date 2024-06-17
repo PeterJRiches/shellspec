@@ -19,7 +19,7 @@ export SHELLSPEC_ERROR_EXIT_CODE='102'
 export SHELLSPEC_PROFILER=''
 export SHELLSPEC_PROFILER_LIMIT='10'
 export SHELLSPEC_LOGFILE='/dev/tty'
-export SHELLSPEC_TMPDIR=${TMPDIR:-${TMP:-/tmp}}
+export SHELLSPEC_TMPDIR="${TMPDIR:-${TMP:-/tmp}}"
 export SHELLSPEC_KEEP_TMPDIR=''
 export SHELLSPEC_QUICK=''
 export SHELLSPEC_WORKERS='0'
@@ -406,7 +406,7 @@ optparser_parse() {
       '-I'|'--load-path')
         [ $# -le 1 ] && set "required" "$1" && break
         OPTARG=$2
-        array SHELLSPEC_LOAD_PATH SHELLSPEC
+        path_list SHELLSPEC_LOAD_PATH SHELLSPEC
         shift ;;
       '--helperdir')
         [ $# -le 1 ] && set "required" "$1" && break

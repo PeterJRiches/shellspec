@@ -8,6 +8,7 @@ shellspec_subject_line() {
 
   # shellcheck disable=SC2034
   SHELLSPEC_META="text"
+  shellspec_readfile_once SHELLSPEC_STDOUT "$SHELLSPEC_STDOUT_FILE"
   if [ ${SHELLSPEC_STDOUT+x} ]; then
     # shellcheck disable=SC2034
     SHELLSPEC_SUBJECT=$SHELLSPEC_STDOUT
@@ -17,5 +18,8 @@ shellspec_subject_line() {
   fi
   shellspec_off UNHANDLED_STDOUT
 
-  eval shellspec_syntax_dispatch modifier line ${1+'"$@"'}
+  case $# in
+    0) shellspec_syntax_dispatch modifier line ;;
+    *) shellspec_syntax_dispatch modifier line "$@" ;;
+  esac
 }

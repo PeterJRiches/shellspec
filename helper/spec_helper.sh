@@ -7,6 +7,8 @@ spec_helper_precheck() {
   minimum_version "$SHELLSPEC_VERSION"
 
   if [ "${PIPEFAIL:-}" ]; then
+    # TODO: set -o pipefail will be allowed in POSIX issue 8
+    # shellcheck disable=SC3040
     if ( set -o pipefail ) 2>/dev/null; then
       info "pipefail enabled"
     else
@@ -16,6 +18,7 @@ spec_helper_precheck() {
   fi
 
   if [ "${EXTGLOB:-}" ]; then
+    # shellcheck disable=SC3044
     if shopt -s extglob 2>/dev/null; then
       info "extglob enabled"
       setenv EXTGLOB="extglob"
@@ -34,14 +37,16 @@ spec_helper_precheck() {
   fi
 }
 
-# shellcheck disable=SC2039
 spec_helper_loaded() {
   # http://redsymbol.net/articles/unofficial-bash-strict-mode/
+  # shellcheck disable=SC2153
   IFS="${SHELLSPEC_LF}${SHELLSPEC_TAB}"
 
+  # shellcheck disable=SC3040
   [ "${PIPEFAIL:-}" ] && set -o pipefail
   unset PIPEFAIL ||:
 
+  # shellcheck disable=SC3044
   case ${EXTGLOB:-} in
     extglob) shopt -s extglob ;;
     extendedglob) setopt extendedglob ;;
@@ -80,12 +85,12 @@ spec_helper_configure() {
     fi
   }
 
-  set_stderr() {
-    if stderr > /dev/null; then
-      SHELLSPEC_STDERR=$(stderr; echo _)
-      SHELLSPEC_STDERR=${SHELLSPEC_STDERR%_}
+  set_fd() {
+    SHELLSPEC_STDIO_FILE_BASE=$SHELLSPEC_WORKDIR
+    if "fd$1" > /dev/null; then
+      "fd$1" > "$SHELLSPEC_STDIO_FILE_BASE.fd-$1"
     else
-      unset SHELLSPEC_STDERR ||:
+      @rm -f "$SHELLSPEC_STDIO_FILE_BASE.fd-$1"
     fi
   }
 
@@ -95,6 +100,9 @@ spec_helper_configure() {
     [ "${SHELLSPEC_SUBJECT+x}" ] || return 1
     shellspec_puts "$SHELLSPEC_SUBJECT"
   }
+
+  shellspec_syntax shellspec_modifier__null_modifier_
+  shellspec_modifier__null_modifier_() { :; }
 
   subject_mock() {
     shellspec_output() { shellspec_puts "$1" >&2; }

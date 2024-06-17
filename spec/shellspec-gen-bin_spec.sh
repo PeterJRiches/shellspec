@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % GENBIN: "$SHELLSPEC_TMPBASE/gen-bin"
 % HELPERDIR: "$SHELLSPEC_TMPBASE/gen-bin/spec"
@@ -36,7 +36,7 @@ Describe "run shellspec-gen-bin.sh"
     It 'raises error'
       When run source ./libexec/shellspec-gen-bin.sh "@dummy"
       The error should eq "shellspec helper directory not found: $HELPERDIR"
-      The file dummy-bin should not be exist
+      The file dummy-bin should not exist
       The status should be failure
     End
   End
@@ -52,7 +52,7 @@ Describe "run shellspec-gen-bin.sh"
     It 'skips generate support bin'
       When run source ./libexec/shellspec-gen-bin.sh "@dummy"
       The error should start with "Skip, @dummy already exist"
-      The file dummy-bin should be exist
+      The file dummy-bin should exist
     End
   End
 End

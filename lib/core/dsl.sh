@@ -27,6 +27,7 @@ SHELLSPEC_SKIP_REASON=''
 SHELLSPEC_PENDING_REASON=''
 SHELLSPEC_SHELL_OPTIONS=''
 SHELLSPEC_HOOK_ERROR=''
+SHELLSPEC_USE_FDS=''
 
 shellspec_group_id() {
   # shellcheck disable=SC2034
@@ -39,17 +40,11 @@ shellspec_example_id() {
 }
 
 shellspec_metadata() {
-  if [ "${1:-}" ]; then
-    shellspec_output METADATA
-  fi
+  shellspec_output METADATA
 }
 
 shellspec_finished() {
-  if [ "${1:-}" ]; then
-    shellspec_output FINISHED
-  else
-    shellspec_output_to_fd shellspec_putsn
-  fi
+  shellspec_output FINISHED
 }
 
 shellspec_yield() {
@@ -200,19 +195,22 @@ shellspec_example() {
     *e*) eval "set -- -e ${1+\"\$@\"}" ;;
     *) eval "set -- +e ${1+\"\$@\"}" ;;
   esac
+  shellspec_open_file_descriptors "$SHELLSPEC_USE_FDS"
   set +e
   ( set -e
     shift
     case $# in
-      0) shellspec_invoke_example 3>&2 ;;
-      *) shellspec_invoke_example "$@" 3>&2 ;;
+      0) shellspec_invoke_example ;;
+      *) shellspec_invoke_example "$@" ;;
     esac
   )
   set "$1" -- $? "$SHELLSPEC_LEAK_FILE"
+  shellspec_close_file_descriptors "$SHELLSPEC_USE_FDS"
   if [ "$1" -ne 0 ]; then
     [ -s "$2" ] || set -- "$1" "$SHELLSPEC_STDERR_FILE"
     shellspec_output ABORTED "$@"
     shellspec_output FAILED
+    [ "$1" -ne "$SHELLSPEC_ERROR_EXIT_CODE" ] || exit "$1"
   fi
   shellspec_profile_end
 }
@@ -220,8 +218,8 @@ shellspec_example() {
 shellspec_invoke_example() {
   shellspec_output EXAMPLE
 
-  shellspec_on NOT_IMPLEMENTED
-  shellspec_off FAILED WARNED EXPECTATION LEAK
+  shellspec_on NOT_IMPLEMENTED NO_EXPECTATION
+  shellspec_off FAILED WARNED LEAK
   shellspec_off UNHANDLED_STATUS UNHANDLED_STDOUT UNHANDLED_STDERR
 
   # Output SKIP message if skipped in outer group.
@@ -229,6 +227,10 @@ shellspec_invoke_example() {
     if [ "$SHELLSPEC_HOOK_ERROR" ]; then
       shellspec_output HOOK_ERROR "$SHELLSPEC_HOOK_ERROR"
       shellspec_output FAILED
+      return 0
+    fi
+    if ! shellspec_dsl_check; then
+      shellspec_output ERROR
       return 0
     fi
     if ! shellspec_call_before_hooks EACH; then
@@ -259,7 +261,7 @@ shellspec_invoke_example() {
     return 0
   }
 
-  shellspec_output_unless EXPECTATION && shellspec_on WARNED
+  shellspec_output_if NO_EXPECTATION && shellspec_on WARNED
   shellspec_output_if UNHANDLED_STATUS && shellspec_on WARNED
   shellspec_output_if UNHANDLED_STDOUT && shellspec_on WARNED
   shellspec_output_if UNHANDLED_STDERR && shellspec_on WARNED
@@ -278,6 +280,28 @@ shellspec_invoke_example() {
   shellspec_output_if WARNED || shellspec_output SUCCEEDED
 }
 
+shellspec_dsl_check() {
+  shellspec_fds_check
+}
+
+shellspec_fds_check() {
+  set -- "$SHELLSPEC_USE_FDS:"
+  while [ "${1%%:*}" ]; do
+    set -- "${1#*:}" "${1%%:*}"
+    case $2 in ([0-9]) continue; esac
+    if shellspec_is_identifier "$2"; then
+      [ "$SHELLSPEC_FDVAR_AVAILABLE" ] && continue
+      set -- "Assigning file descriptors to variables is not supported" \
+        "in the current shell"
+    else
+      set -- "Invalid file descriptor:" "$2"
+    fi
+    shellspec_output DSL_ERROR "UseFD: $1 $2"
+    return 1
+  done
+  return 0
+}
+
 shellspec_statement() {
   shellspec_off SYNTAX_ERROR
   shellspec_if SKIP && return 0
@@ -288,12 +312,16 @@ shellspec_statement() {
 }
 
 shellspec_when() {
+  # Allow "When I"
+  if [ "$#" -gt "0" ] && [ "$1" = "I" ]; then
+    shift
+  fi
   eval shellspec_join SHELLSPEC_EVALUATION '" "' When ${1+'"$@"'}
   shellspec_off NOT_IMPLEMENTED
 
   shellspec_if EVALUATION && {
     set -- "Evaluation has already been executed." \
-      "Only one Evaluation allow per Example." \
+      "Only one Evaluation is allowed per Example." \
       "(Use 'parameterized example' if you want a loop)"
     shellspec_output SYNTAX_ERROR_EVALUATION "$1 $2${SHELLSPEC_LF}$3"
     shellspec_on FAILED
@@ -301,7 +329,7 @@ shellspec_when() {
   }
   shellspec_on EVALUATION
 
-  shellspec_if EXPECTATION && {
+  shellspec_if NO_EXPECTATION || {
     set -- "Expectation has already been executed."
     shellspec_output SYNTAX_ERROR_EVALUATION "$1"
     shellspec_on FAILED
@@ -342,8 +370,7 @@ shellspec_around_run() {
 
 shellspec_the() {
   eval shellspec_join SHELLSPEC_EXPECTATION '" "' The ${1+'"$@"'}
-  shellspec_off NOT_IMPLEMENTED
-  shellspec_on EXPECTATION
+  shellspec_off NOT_IMPLEMENTED NO_EXPECTATION
   [ "$SHELLSPEC_XTRACE_ONLY" ] && return 0
 
   if [ $# -eq 0 ]; then
@@ -357,8 +384,7 @@ shellspec_the() {
 
 shellspec_assert() {
   eval shellspec_join SHELLSPEC_EXPECTATION '" "' Assert ${1+'"$@"'}
-  shellspec_off NOT_IMPLEMENTED
-  shellspec_on EXPECTATION
+  shellspec_off NOT_IMPLEMENTED NO_EXPECTATION
   [ "$SHELLSPEC_XTRACE_ONLY" ] && return 0
 
   if [ $# -eq 0 ]; then
@@ -377,12 +403,9 @@ shellspec_assert() {
   ( set -e; shift; "$@" </dev/null 2>"$SHELLSPEC_ASSERT_STDERR_FILE" )
   set "$1" -- $?
 
-  shellspec_readfile SHELLSPEC_ASSERT_STDERR "$SHELLSPEC_ASSERT_STDERR_FILE"
-
   if [ "$1" -eq 0 ]; then
-    if [ "$SHELLSPEC_ASSERT_STDERR" ]; then
-      shellspec_output ASSERT_WARN "$1"
-      shellspec_output_assert_message "$SHELLSPEC_ASSERT_STDERR"
+    if [ -s "$SHELLSPEC_ASSERT_STDERR_FILE" ]; then
+      shellspec_output ASSERT_WARN "$1" "$SHELLSPEC_ASSERT_STDERR_FILE"
       shellspec_on WARNED
       return 0
     fi
@@ -390,8 +413,7 @@ shellspec_assert() {
     return 0
   fi
 
-  shellspec_output ASSERT_ERROR "$1"
-  shellspec_output_assert_message "$SHELLSPEC_ASSERT_STDERR"
+  shellspec_output ASSERT_ERROR "$1" "$SHELLSPEC_ASSERT_STDERR_FILE"
   shellspec_on FAILED
 }
 
@@ -516,21 +538,30 @@ shellspec_filter() {
 }
 
 shellspec_dump() {
-  set -- ""
-  if [ "${SHELLSPEC_STDOUT+x}" ]; then
-    set -- "$@" "[stdout]${SHELLSPEC_LF}${SHELLSPEC_STDOUT}"
+  shellspec_putsn
+  shellspec_puts "[Dump] $SHELLSPEC_SPECFILE:$SHELLSPEC_AUX_LINENO "
+  shellspec_puts "(exit status: ${SHELLSPEC_STATUS-<unset>})"
+
+  shellspec_dump_file stdout SHELLSPEC_STDOUT "$SHELLSPEC_STDOUT_FILE"
+  shellspec_dump_file stderr SHELLSPEC_STDERR "$SHELLSPEC_STDERR_FILE"
+
+  shellspec_dump_callback() {
+    shellspec_dump_file "fd $1" "SHELLSPEC_FD_$1" "$2"
+  }
+
+  shellspec_enum_file_descriptors shellspec_dump_callback "$SHELLSPEC_USE_FDS"
+}
+
+shellspec_dump_file() {
+  shellspec_readfile_once "$2" "$3"
+  shellspec_putsn
+  if eval "[ \"\${$2:-}\" ] &&:"; then
+    eval "shellspec_puts \"- $1:\${SHELLSPEC_LF}\${$2}\""
+  elif eval "[ \${$2+x} ] &&:"; then
+    shellspec_puts "- $1: <empty>"
   else
-    set -- "$@" "[stdout] <unset>"
+    shellspec_puts "- $1: <unset>"
   fi
-  if [ "${SHELLSPEC_STDERR+x}" ]; then
-    set -- "$@" "[stderr]${SHELLSPEC_LF}${SHELLSPEC_STDERR}"
-  else
-    set -- "$@" "[stderr] <unset>"
-  fi
-  set -- "$@" "[status] ${SHELLSPEC_STATUS-<unset>}" ""
-  IFS="${SHELLSPEC_LF}${IFS}"
-  shellspec_putsn "$*"
-  IFS=${IFS#?}
 }
 
 shellspec_preserve() {
@@ -577,4 +608,17 @@ shellspec_unmock() {
   if [ "$2" -gt 0 ]; then
     shellspec_mv "$1#$2" "$1"
   fi
+}
+
+shellspec_usefd() {
+  # Workaround for ksh93t on AIX 7.2
+  case ${KSH_VERSION:-} in (*93t*)
+    (
+      case $1 in
+        [0-9]) eval "exec $1>/dev/null" ;;
+        *) eval "exec {$1}>/dev/null" ;;
+      esac
+    )
+  esac
+  SHELLSPEC_USE_FDS="${SHELLSPEC_USE_FDS}${SHELLSPEC_USE_FDS:+:}$1"
 }

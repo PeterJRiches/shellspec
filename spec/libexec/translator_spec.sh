@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
 
@@ -949,7 +949,7 @@ Describe "libexec/translator.sh"
 
   Describe "remove_from_ranges()"
     BeforeRun "ranges='1 2 3 1 2 3'"
-    AfterRun 'echo $ranges'
+    AfterRun 'echo "$ranges"'
 
     It "removes matched range"
       is_in_range() { [ "$1" = "2" ]; }

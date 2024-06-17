@@ -6,7 +6,7 @@ set -eu
 # shellcheck source=lib/libexec/executor.sh
 . "${SHELLSPEC_LIB:-./lib}/libexec/executor.sh"
 
-if [ "$SHELLSPEC_KCOV" -gt 0 ]; then
+if [ "$SHELLSPEC_KCOV" ]; then
   # shellcheck source=lib/libexec/kcov-executor.sh
   . "${SHELLSPEC_LIB:-./lib}/libexec/kcov-executor.sh"
 elif [ "$SHELLSPEC_WORKERS" -gt 0 ]; then
@@ -25,6 +25,8 @@ translator() {
 }
 
 error_handler() {
+  "$SHELLSPEC_TRAP" 'show_break_point' INT
+
   specfile='' lineno='' errors='' error_handler_status=0
 
   while IFS= read -r line; do
@@ -34,7 +36,7 @@ error_handler() {
           detect_unexpected_error "$specfile" "$lineno" "$errors"
           errors=''
         fi
-        line=${line#${SYN}shellspec_marker:}
+        line=${line#"$SYN"shellspec_marker:}
         specfile=${line% *} lineno=${line##* }
         ;;
       Syntax\ error:*) putsn "${LF}${line}"; error_handler_status=1 ;;
@@ -42,8 +44,10 @@ error_handler() {
       *internal\ error:\ j_async:\ bad\ nzombie*) ;;
       # Workaround for loksh <= 6.7.2 when executed as a background process
       *internal\ error:\ j_set_async:\ bad\ nzombie*) ;;
-      # Workaround for ksh with coverage
+      # Workaround for ksh with kcov
       *version*sh*AT\&T\ Research*) ;;
+      # Workaround for ksh 2020 with kcov
+      kcov:\ error:\ *is\ not\ an\ integer*) ;;
       *) errors="${errors}${line}${LF}" error_handler_status=1
     esac
   done
@@ -52,6 +56,10 @@ error_handler() {
     detect_unexpected_error "$specfile" "$lineno" "$errors"
   fi
   return $error_handler_status
+}
+
+show_break_point() {
+  abort "${LF}Break at ${specfile:-}:${lineno:-}" 2>&4
 }
 
 detect_unexpected_error() {
@@ -95,11 +103,22 @@ detect_range() {
   echo "${lineno_begin}-${lineno_end:-$lineno}"
 }
 
-( ( ( ( set +e; executor "$@" 2>&1 >&4; echo $? >&5 ) 2>&1 \
-  | error_handler >&3; echo $? >&5) 5>&1) \
-  | (
-      read -r xs1 && [ "$xs1" -ne 0 ] && exit "$xs1"
-      read -r xs2 && [ "$xs2" -ne 0 ] && exit "$xs2"
-      exit 0
-    )
-) 4>&1
+xs1=0 xs2=0
+set +e
+{
+  xs=$(
+    (
+      (
+        ( set -e; executor "$@" ) 2>&1 >&3 3>&- 4>&- 5>&-
+        echo "xs1=$?" >&5
+      ) | (
+        ( set -e; error_handler ) >&4 3>&- 4>&- 5>&-
+        echo "xs2=$?" >&5
+      )
+    ) 5>&1
+  )
+} 3>&1 4>&2
+eval "$xs"
+[ "$xs1" -ne 0 ] && exit "$xs1"
+[ "$xs2" -ne 0 ] && exit "$xs2"
+exit 0

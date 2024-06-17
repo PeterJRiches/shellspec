@@ -1,7 +1,14 @@
-#shellcheck shell=sh
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 Describe "core/subjects/stderr.sh"
-  BeforeRun set_stderr subject_mock
+  mock() {
+    unset SHELLSPEC_STDERR ||:
+    shellspec_output() { shellspec_puts "$1" >&2; }
+    shellspec_readfile() { subject "$@"; }
+  }
+  BeforeRun mock
+  preserve() { %preserve SHELLSPEC_META:META SHELLSPEC_SUBJECT:SUBJECT; }
+  AfterRun preserve
 
   Describe "stderr subject"
     Example 'example'
@@ -12,25 +19,24 @@ Describe "core/subjects/stderr.sh"
     End
 
     It 'uses stderr as subject when stderr is defined'
-      stderr() { echo "test"; }
-      preserve() { %preserve SHELLSPEC_META:META; }
-      AfterRun preserve
-
-      When run shellspec_subject_stderr _modifier_
-      The entire stdout should equal 'test'
+      subject() { eval "$1=test\${SHELLSPEC_LF}"; }
+      When run shellspec_subject_stderr _null_modifier_
+      The variable SUBJECT should equal 'test'
       The variable META should eq 'text'
     End
 
     It 'uses undefined as subject when stderr is undefined'
-      stderr() { false; }
-      When run shellspec_subject_stderr _modifier_
-      The status should be failure
+      subject() { unset "$1" ||:; }
+      When run shellspec_subject_stderr _null_modifier_
+      The variable SUBJECT should be undefined
+      The variable META should eq 'text'
     End
 
-    It 'outputs error if next word is missing'
-      stderr() { echo "test"; }
+    It 'outputs an error if the next word is missing'
+      subject() { eval "$1=test\${SHELLSPEC_LF}"; }
       When run shellspec_subject_stderr
-      The entire stderr should equal SYNTAX_ERROR_DISPATCH_FAILED
+      The stderr should equal SYNTAX_ERROR_DISPATCH_FAILED
+      The variable META should eq 'text'
     End
   End
 
@@ -38,30 +44,29 @@ Describe "core/subjects/stderr.sh"
     Example 'example'
       foo() { echo "foo" >&2; }
       When call foo
-      The entire stderr should equal "foo${IFS%?}"
-      The entire error should equal "foo${IFS%?}"
+      The entire stderr should equal "foo${SHELLSPEC_LF}"
+      The entire error should equal "foo${SHELLSPEC_LF}"
     End
 
     It 'uses stderr including last LF as subject when stderr is defined'
-      stderr() { echo "test"; }
-      preserve() { %preserve SHELLSPEC_META:META; }
-      AfterRun preserve
-
-      When run shellspec_subject_entire_stderr _modifier_
-      The entire stdout should equal "test${IFS%?}"
+      subject() { eval "$1=test\${SHELLSPEC_LF}"; }
+      When run shellspec_subject_entire_stderr _null_modifier_
+      The variable SUBJECT should equal "test${SHELLSPEC_LF}"
       The variable META should eq 'text'
     End
 
     It 'uses undefined as subject when stderr is undefined'
-      stderr() { false; }
-      When run shellspec_subject_entire_stderr _modifier_
-      The status should be failure
+      subject() { unset "$1" ||:; }
+      When run shellspec_subject_entire_stderr _null_modifier_
+      The variable SUBJECT should be undefined
+      The variable META should eq 'text'
     End
 
-    It 'outputs error if next word is missing'
-      stderr() { echo "test"; }
+    It 'outputs an error if the next word is missing'
+      subject() { eval "$1=test\${SHELLSPEC_LF}"; }
       When run shellspec_subject_entire_stderr
-      The entire stderr should equal SYNTAX_ERROR_DISPATCH_FAILED
+      The stderr should equal SYNTAX_ERROR_DISPATCH_FAILED
+      The variable META should eq 'text'
     End
   End
 End

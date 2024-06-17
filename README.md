@@ -1,13 +1,32 @@
-# ShellSpec
+# ShellSpec: full-featured BDD unit testing framework
 
-ShellSpec is a **full-featured BDD unit testing framework** for dash, bash, ksh, zsh and **all POSIX shells** that provides first-class features such as code coverage, mocking, parameterized test, parallel execution and more. It was developed as a dev/test tool for **cross-platform shell scripts and shell script libraries**. ShellSpec is a new modern testing framework released in 2019, but it's already stable enough. With lots of practical CLI features and simple yet powerful syntax, it provides you with a fun shell script test environment.
+ShellSpec is a **full-featured [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) unit testing framework** for dash, bash, ksh, zsh and **all POSIX shells** that provides first-class features such as code coverage, mocking, parameterized test, parallel execution and more. It was developed as a dev/test tool for **cross-platform shell scripts and shell script libraries**. ShellSpec is a new modern testing framework released in 2019, but it's already stable enough. With lots of practical CLI features and simple yet powerful syntax, it provides you with a fun shell script test environment.
 
-[![GitHub Actions Status](https://img.shields.io/github/workflow/status/shellspec/shellspec/Release?label=GithubActions&style=flat-square)](https://github.com/shellspec/shellspec/actions)
-[![Travis CI](https://img.shields.io/travis/com/shellspec/shellspec/master.svg?label=TravisCI&style=flat-square)](https://travis-ci.com/shellspec/shellspec)
+[![Ubuntu](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/ubuntu-jammy.yml?label=Ubuntu&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/ubuntu-jammy.yml)
+[![macOS](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/macos-sonoma.yml?label=macOS&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/macos-sonoma.yml)
+[![FreeBSD](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/freebsd-14.yml?label=FreeBSD&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/freebsd-14.yml)
+[![NetBSD](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/netbsd-10.yml?label=NetBSD&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/netbsd-10.yml)
+[![OpenBSD](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/openbsd7.5.yml?label=OpenBSD&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/openbsd7.5.yml)
+[![DragonFlyBSD](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/dragonflybsd-6.4.yml?label=DragonFlyBSD&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/dragonflybsd-6.4.yml)
+[![Solaris11](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/solaris-11.4.yml?label=Solaris11&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/solaris-11.4.yml)<br>
+[![gitbash](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/windows-gitbash.yml?label=Windows%20(gitbash)&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/windows-gitbash.yml)
+[![cygwin](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/windows-cygwin.yml?label=Windows%20(cygwin)&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/windows-cygwin.yml)
+[![msys](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/windows-msys.yml?label=Windows%20(msys)&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/windows-msys.yml)
+[![busybox](https://img.shields.io/github/actions/workflow/status/shellspec/shellspec/windows-busybox.yml?label=Windows%20(busybox)&style=flat-square)](https://github.com/shellspec/shellspec/actions/workflows/windows-busybox.yml)<br>
+[![bash](https://img.shields.io/badge/bash-&ge;2.03-lightgrey.svg?style=flat)](https://www.gnu.org/software/bash/)
+[![bosh](https://img.shields.io/badge/bosh-&ge;2018%2F10%2F07-lightgrey.svg?style=flat)](https://codeberg.org/schilytools/schilytools)
+[![busybox](https://img.shields.io/badge/busybox-&ge;1.20.0-lightgrey.svg?style=flat)](https://www.busybox.net/)
+[![dash](https://img.shields.io/badge/dash-&ge;0.5.4-lightgrey.svg?style=flat)](http://gondor.apana.org.au/~herbert/dash/)
+[![ksh](https://img.shields.io/badge/ksh-&ge;93r-lightgrey.svg?style=flat)](https://github.com/ksh93/ksh)
+[![mksh](https://img.shields.io/badge/mksh-&ge;R28-lightgrey.svg?style=flat)](http://www.mirbsd.org/mksh.htm)
+[![posh](https://img.shields.io/badge/posh-&ge;0.3.14-lightgrey.svg?style=flat)](https://salsa.debian.org/clint/posh)
+[![yash](https://img.shields.io/badge/yash-&ge;2.29-lightgrey.svg?style=flat)](https://magicant.github.io/yash/)
+[![zsh](https://img.shields.io/badge/zsh-&ge;3.1.9-lightgrey.svg?style=flat)](https://www.zsh.org/)
+
 [![Cirrus CI](https://img.shields.io/cirrus/github/shellspec/shellspec.svg?label=CirrusCI&style=flat-square)](https://cirrus-ci.com/github/shellspec/shellspec)
 [![Circle CI](https://img.shields.io/circleci/build/github/shellspec/shellspec.svg?label=CircleCI&style=flat-square)](https://circleci.com/gh/shellspec/shellspec)
-[![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/shellspec/shellspec?style=flat-square&label=DockerHub)![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/shellspec/shellspec?style=flat-square&label=builds)](https://hub.docker.com/r/shellspec/shellspec)<br>
-[![Kcov](https://img.shields.io/badge/dynamic/json.svg?label=Kcov&query=percent_covered&suffix=%25&url=https%3A%2F%2Fcircleci.com%2Fapi%2Fv1.1%2Fproject%2Fgithub%2Fshellspec%2Fshellspec%2Flatest%2Fartifacts%2F0%2Fcoverage%2Fcoverage.json%3Fbranch%3Dmaster&style=flat-square)](https://circleci.com/api/v1.1/project/github/shellspec/shellspec/latest/artifacts/0/coverage/index.html?branch=master)
+[![Docker Cloud Automated build](https://img.shields.io/docker/cloud/automated/shellspec/shellspec?style=flat-square&label=DockerHub)![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/shellspec/shellspec?style=flat-square&label=builds)](https://hub.docker.com/r/shellspec/shellspec)
+[![Kcov](https://img.shields.io/badge/dynamic/json.svg?label=Kcov&query=percent_covered&suffix=%25&url=https%3A%2F%2Fcircleci.com%2Fapi%2Fv1.1%2Fproject%2Fgithub%2Fshellspec%2Fshellspec%2Flatest%2Fartifacts%2F0%2Fcoverage%2Fcoverage.json%3Fbranch%3Dmaster&style=flat-square)](https://circleci.com/api/v1.1/project/github/shellspec/shellspec/latest/artifacts/0/coverage/index.html?branch=master)<br>
 [![Coveralls](https://img.shields.io/coveralls/github/shellspec/shellspec.svg?label=Coveralls&style=flat-square)](https://coveralls.io/github/shellspec/shellspec?branch=master)
 [![Code Climate](https://img.shields.io/codeclimate/coverage/shellspec/shellspec?label=CodeClimate&style=flat-square)](https://codeclimate.com/github/shellspec/shellspec)
 [![Codecov](https://img.shields.io/codecov/c/github/shellspec/shellspec.svg?label=Codecov&style=flat-square)](https://codecov.io/gh/shellspec/shellspec)
@@ -15,16 +34,6 @@ ShellSpec is a **full-featured BDD unit testing framework** for dash, bash, ksh,
 [![GitHub top language](https://img.shields.io/github/languages/top/shellspec/shellspec.svg?style=flat-square)](https://github.com/shellspec/shellspec/search?l=Shell)
 [![GitHub release](https://img.shields.io/github/release/shellspec/shellspec.svg?style=flat-square)](https://github.com/shellspec/shellspec/releases/latest)
 [![License](https://img.shields.io/github/license/shellspec/shellspec.svg?style=flat-square)](https://github.com/shellspec/shellspec/blob/master/LICENSE)
-
-[![bash](https://img.shields.io/badge/bash-&ge;2.03-lightgrey.svg?style=flat)](https://www.gnu.org/software/bash/)
-[![bosh](https://img.shields.io/badge/bosh-&ge;2018%2F10%2F07-lightgrey.svg?style=flat)](http://schilytools.sourceforge.net/bosh.html)
-[![busybox](https://img.shields.io/badge/busybox-&ge;1.20.0-lightgrey.svg?style=flat)](https://www.busybox.net/)
-[![dash](https://img.shields.io/badge/dash-&ge;0.5.4-lightgrey.svg?style=flat)](http://gondor.apana.org.au/~herbert/dash/)
-[![ksh](https://img.shields.io/badge/ksh-&ge;93s-lightgrey.svg?style=flat)](http://kornshell.org)
-[![mksh](https://img.shields.io/badge/mksh-&ge;R28-lightgrey.svg?style=flat)](http://www.mirbsd.org/mksh.htm)
-[![posh](https://img.shields.io/badge/posh-&ge;0.3.14-lightgrey.svg?style=flat)](https://salsa.debian.org/clint/posh)
-[![yash](https://img.shields.io/badge/yash-&ge;2.29-lightgrey.svg?style=flat)](https://yash.osdn.jp/)
-[![zsh](https://img.shields.io/badge/zsh-&ge;3.1.9-lightgrey.svg?style=flat)](https://www.zsh.org/)
 
 ----
 
@@ -82,6 +91,7 @@ NOTE: This documentation contains unreleased features. Check them in the changel
   - [Execution directory](#execution-directory)
   - [Embedded shell scripts](#embedded-shell-scripts)
   - [Translation process](#translation-process)
+  - [Syntax formatter (`altshfmt`)](#syntax-formatter-altshfmt)
 - [DSL syntax](#dsl-syntax)
   - [Basic structure](#basic-structure)
     - [`Describe`, `Context`, `ExampleGroup` - example group block](#describe-context-examplegroup---example-group-block)
@@ -116,10 +126,11 @@ NOTE: This documentation contains unreleased features. Check them in the changel
     - [`BeforeAll`, `AfterAll` - example group hook](#beforeall-afterall---example-group-hook)
     - [`BeforeCall`, `AfterCall` - call evaluation hook](#beforecall-aftercall---call-evaluation-hook)
     - [`BeforeRun`, `AfterRun` - run evaluation hook](#beforerun-afterrun---run-evaluation-hook)
+    - [Pitfalls](#pitfalls)
   - [Helpers](#helpers)
-    - [`Dump` - dump stdout, stderr and status for debugging](#dump---dump-stdout-stderr-and-status-for-debugging)
+    - [`Dump` - dump stdout, stderr, and status for debugging](#dump---dump-stdout-stderr-and-status-for-debugging)
     - [`Include` - include a script file](#include---include-a-script-file)
-    - [`Set` - set shell option](#set---set-shell-option)
+    - [`Set` - set shell options](#set---set-shell-options)
     - [`Path`, `File`, `Dir` - path alias](#path-file-dir---path-alias)
     - [`Data` - pass data as stdin to evaluation](#data---pass-data-as-stdin-to-evaluation)
     - [`Parameters` - parameterized example](#parameters---parameterized-example)
@@ -152,7 +163,7 @@ NOTE: This documentation contains unreleased features. Check them in the changel
     - [`Intercept`](#intercept)
     - [`test || __() { :; }`](#test--__---)
     - [`__`](#__)
-- [spec_helper](#spec_helper)
+- [spec\_helper](#spec_helper)
   - [`<module>_precheck`](#module_precheck)
     - [`minimum_version`](#minimum_version)
     - [`error`, `warn`, `info`](#error-warn-info)
@@ -168,13 +179,19 @@ NOTE: This documentation contains unreleased features. Check them in the changel
 - [Use with Docker](#use-with-docker)
 - [Extension](#extension)
   - [Custom subject, modifier and matcher](#custom-subject-modifier-and-matcher)
+- [Code Coverage](#code-coverage)
+  - [Supported shells](#supported-shells)
+  - [Measurement target](#measurement-target)
+  - [Coverage report](#coverage-report)
 - [For developers](#for-developers)
   - [Subprojects](#subprojects)
     - [ShellMetrics - Cyclomatic Complexity Analyzer for shell scripts](#shellmetrics---cyclomatic-complexity-analyzer-for-shell-scripts)
     - [ShellBench - A benchmark utility for POSIX shell comparison](#shellbench---a-benchmark-utility-for-posix-shell-comparison)
+    - [altshfmt - AltSH (alternative shell script) formatter](#altshfmt---altsh-alternative-shell-script-formatter)
   - [Related projects](#related-projects)
     - [getoptions - An elegant option parser and generator for shell scripts](#getoptions---an-elegant-option-parser-and-generator-for-shell-scripts)
     - [readlinkf - readlink -f implementation for shell scripts](#readlinkf---readlink--f-implementation-for-shell-scripts)
+    - [portable-echo - Portable echo shell function for POSIX compliant shells](#portable-echo---portable-echo-shell-function-for-posix-compliant-shells)
   - [Inspired frameworks](#inspired-frameworks)
   - [Contributions](#contributions)
 
@@ -208,13 +225,12 @@ NOTE: This documentation contains unreleased features. Check them in the changel
 | Platform                                                         | Test                                               |
 | ---------------------------------------------------------------- | -------------------------------------------------- |
 | Linux (Debian, Ubuntu, Fedora, CentOS, Alpine, Busybox, OpenWrt) | [GitHub Actions][Actions] or [Docker][Docker]      |
-| macOS (Default installed shells, Homebrew)                       | [GitHub Actions][Actions] or [Travis CI][TravisCI] |
+| macOS (Default installed shells, Homebrew)                       | [GitHub Actions][Actions]                          |
 | Windows (Git bash, msys2, cygwin, busybox-w32, WSL)              | [GitHub Actions][Actions]                          |
 | BSD (FreeBSD, OpenBSD, NetBSD)                                   | [Cirrus CI][CirrusCI] (FreeBSD) or Manual (Others) |
 | Unix (Solaris, AIX)                                              | Manual only                                        |
 
 [Actions]: https://github.com/shellspec/shellspec/actions
-[TravisCI]: https://travis-ci.com/shellspec/shellspec
 [CirrusCI]: https://cirrus-ci.com/github/shellspec/shellspec
 [Docker]: dockerfiles
 
@@ -781,7 +797,7 @@ End
 ```
 
 **The best place to learn how to write a specfile is the
-[examples/spec](examples/spec) directory. You should take a look at it !**
+[examples/spec](examples/spec) directory. You should take a look at it!**
 *(Those examples include failure examples on purpose.)*
 
 ### About DSL
@@ -796,32 +812,33 @@ shell-independent line numbers, and workarounds for bugs in some shells.
 
 ### Execution directory
 
-Since version 0.28.0, the current directory when run a specfile is the project root directory by default. Even if you run a specfile from a any subdirectory in the project directory,
-It is the project root directory.
-Before 0.27.x, it was the current directory when the `shellspec` is executed.
+Since version 0.28.0, the working directory when running a specfile is the project root directory by default.
+Even if you run a specfile from a subdirectory in the project directory,
+it is the project root directory.
+Before 0.27.x, it was the current directory when the `shellspec` command was executed.
 
 You can change this directory (location) by using the `--execdir @LOCATION[/DIR]` option.
 You can choose from the following locations and specify a path relative to the location if necessary.
 However, you cannot specify a directory outside the project directory.
 
-- @project   Where the ".shellspec" file is located (project root) [default]
-- @basedir   Where the ".shellspec" or ".shellspec-basedir" file is located
-- @specfile  Where the specfile is located
+- `@project`   Where the `.shellspec` file is located (project root) [default]
+- `@basedir`   Where the `.shellspec` or `.shellspec-basedir` file is located
+- `@specfile`  Where the specfile is located
 
-If basedir is specified, the parent directory is searched from the directory containing the specfile
+If `@basedir` is specified, the parent directory is searched from the directory containing the specfile
 to be run, and the first directory where `.shellspec-basedir` or `.shellspec` is found is used as
 the execution directory. This is useful if you want to have a separate directory for each
-utilities (command) you want to test.
+utility (command) you want to test.
 
 NOTE: You will need to change under the project directory or use the `-c` (`--chdir`) or
-`-C` (`--directory`) option before running specfile.
+`-C` (`--directory`) option before running the specfile.
 
 ### Embedded shell scripts
 
-You can embed shell function (or shell script code) in the specfile.
+You can embed shell functions (or shell script code) in the specfile.
 This shell function can be used for test preparation and complex testing.
 
-Note that the specfile implements the scope using subshell.
+Note that the specfile implements scope using subshells.
 Shell functions defined in the specfile can only be used within blocks (e.g. `Describe`, `It`, etc).
 
 If you want to use a global function, you can define it in `spec_helper.sh`.
@@ -834,6 +851,11 @@ shell script and output to a temporary directory (default: `/tmp`) before being 
 The translation process is simple in that it only replaces forward-matched words (DSLs), with a few
 exceptions. If you are interested in the translated code, you can see with `shellspec --translate`.
 
+### Syntax formatter (`altshfmt`)
+
+The specfile contains DSLs, so it cannot be properly formatted by general shell script formatters.
+If you want to format the specfile, use [altshfmt](https://github.com/shellspec/altshfmt).
+
 ## DSL syntax
 
 ### Basic structure
@@ -841,8 +863,8 @@ exceptions. If you are interested in the translated code, you can see with `shel
 #### `Describe`, `Context`, `ExampleGroup` - example group block
 
 `ExampleGroup` is a block for grouping example groups or examples.
-`Describe` and `Context` are alias for `ExampleGroup`.
-It can be nested and they can contain example groups or examples.
+`Describe` and `Context` are aliases for `ExampleGroup`.
+They can be nested, and may contain example groups or examples.
 
 ```sh
 Describe 'is example group'
@@ -864,8 +886,8 @@ Describe 'is example group' tag1:value1 tag2:value2 ...
 
 #### `It`, `Specify`, `Example` - example block
 
-`Example` is a block for writing evaluation and expectations.
-`It` and `Specify` are alias for `Example`.
+`Example` is a block for writing an evaluation and expectations.
+`It` and `Specify` are aliases for `Example`.
 
 An example is composed by up to one evaluation and multiple expectations.
 
@@ -887,7 +909,7 @@ It 'performs addition' tag1:value1 tag2:value2 ...
 
 #### `Todo` - one liner empty example
 
-`Todo` is the same as the empty example and is treated as [pending](#pending---pending-example) example.
+`Todo` is the same as the empty example and is treated as a [pending](#pending---pending-example) example.
 
 ```sh
 Todo 'will be used later when we write a test'
@@ -898,7 +920,7 @@ End
 
 #### `When` - evaluation
 
-Evaluation executes shell function or command for verification.
+Evaluation executes a shell function or command for verification.
 Only one evaluation can be defined for each example and also can be omitted.
 
 See more details of [Evaluation](docs/references.md#evaluation)
@@ -919,7 +941,7 @@ When call add 1 2 # call `add` shell function with two arguments.
 It runs a command within subshell. Practically, it can also call a shell function.
 The command does not have to be a shell script.
 
-NOTE: This is not supporting coverage measurement.
+NOTE: This does not support coverage measurement.
 
 ```sh
 When run touch /tmp/foo # run `touch` command.
@@ -930,9 +952,9 @@ Some commands below are specially handled by ShellSpec.
 ###### `command` - runs an external command
 
 It runs a command, respecting shebang.
-It can not call shell function. The command does not have to be a shell script.
+It can not call a shell function. The command does not have to be a shell script.
 
-NOTE: This is not supporting coverage measurement.
+NOTE: This does not support coverage measurement.
 
 ```sh
 When run command touch /tmp/foo # run `touch` command.
@@ -951,7 +973,7 @@ When run script my.sh # run `my.sh` script.
 
 It sources a shell script, ignoring its shebang. The script has to be a shell script.
 It is similar to `run script`, but with some differences.
-Unlike `run script`, function-based mock is available.
+Unlike `run script`, function-based mocking is available.
 
 ```sh
 When run source my.sh # source `my.sh` script.
@@ -1040,7 +1062,7 @@ The output should equal 4
 ```
 
 There are many matchers such as string matcher, status matcher, variable matchers and stat matchers.
-The `satisfy` matcher is useful for verification with user-defined function.
+The `satisfy` matcher is useful for verification with user-defined functions.
 
 Please refer to the [Matchers](docs/references.md#matchers) for more details.
 
@@ -1162,7 +1184,7 @@ Only the examples included in these will be executed when the `--focus` option i
 
 ```sh
 Describe 'is example group'
-  fDescribe 'is focues example group'
+  fDescribe 'is focus example group'
     ...
   End
 End
@@ -1181,12 +1203,12 @@ End
 
 #### About temporary pending and skip
 
-The pending and skip without message is "temporary pending" and "temporary skip".
-"x"-prefixed example groups and examples are treated as a temporary skip.
+Using `Pending` or `Skip` without a message is a "temporary pending" or "temporary skip".
+"x"-prefixed example groups and examples are also treated as temporary skips.
 
-The non-temporary pending and skip (with message) is used when it takes a long time to resolve.
-It may be committed to a version control system. The temporary pending and skip is used during the current work.
-We do not recommend committing it to a version control system.
+The non-temporary `Pending` and `Skip` (with a message) are used when the case will take a long time to resolve.
+It may be committed to a version control system. Temporary pending and skip are used during current work.
+We do not recommend committing them to a version control system.
 
 These two types differ in the display of the report. Refer to `--skip-message` and `--pending-message` options.
 
@@ -1237,7 +1259,7 @@ End
 
 #### `BeforeAll`, `AfterAll` - example group hook
 
-You can specify commands to be executed before / after all examples by `BeforeAll` and `AfterAll`
+You can specify commands to be executed before / after all examples by `BeforeAll` and `AfterAll`.
 
 ```sh
 Describe 'example all hook'
@@ -1258,7 +1280,7 @@ End
 
 #### `BeforeCall`, `AfterCall` - call evaluation hook
 
-You can specify commands to be executed before / after call evaluation by `BeforeCall` and `AfterCall`
+You can specify commands to be executed before / after call evaluation by `BeforeCall` and `AfterCall`.
 
 NOTE: These hooks were originally created to test ShellSpec itself.
 Please use the `BeforeEach` / `AfterEach` hooks whenever possible.
@@ -1280,7 +1302,7 @@ End
 #### `BeforeRun`, `AfterRun` - run evaluation hook
 
 You can specify commands to be executed before / after run evaluation
-(`run`, `run command`, `run script` and `run source`) by `BeforeRun` and `AfterRun`
+(`run`, `run command`, `run script`, and `run source`) by `BeforeRun` and `AfterRun`.
 
 These hooks are executed in the same subshell as the "run evaluation".
 Therefore, you can access the variables after executing the evaluation.
@@ -1302,11 +1324,19 @@ Describe 'run evaluation hook'
 End
 ```
 
+#### Pitfalls
+
+The hooks may fail in subtle ways if there is output to stderr, even if the
+return code / exit code is `0`.
+
+Commands like `git checkout` routinely write to stderr, even if there was no actual
+failure, so be aware that your hooks may fail because of this.
+
 ### Helpers
 
-#### `Dump` - dump stdout, stderr and status for debugging
+#### `Dump` - dump stdout, stderr, and status for debugging
 
-Dump stdout, stderr and status of the evaluation. It is useful for debugging.
+Dump stdout, stderr, and status of the evaluation. It is useful for debugging.
 
 ```sh
 When call echo hello world
@@ -1330,9 +1360,9 @@ Describe 'lib.sh'
 End
 ```
 
-#### `Set` - set shell option
+#### `Set` - set shell options
 
-Set shell option before executing each example.
+Set shell options before executing each example.
 The shell option name is the long name of `set` or the name of `shopt`:
 
 NOTE: Use `Set` instead of the `set` command because the `set` command
@@ -1342,7 +1372,7 @@ may not work as expected in some shells.
 Describe 'Set helper'
   Set 'errexit:off' 'noglob:on'
 
-  It 'sets shell options before executiong the example'
+  It 'sets shell options before executing the example'
     When call foo
   End
 End
@@ -1358,7 +1388,7 @@ Describe 'Path helper'
   Path hosts-file="/etc/hosts"
 
   It 'defines short alias for long path'
-    The path hosts-file should be exists
+    The path hosts-file should exist
   End
 End
 ```
@@ -1384,12 +1414,13 @@ End
 
 You can also use a file, function or string as data sources.
 
-See more details of [Data](docs/references.md##data)
+See more details of [Data](docs/references.md#data)
 
 #### `Parameters` - parameterized example
 
-Parameterized test (aka Data Driven Test) is used to run the same test with
-different parameters. `Parameters` defines its parameters.
+Parameterized tests (aka [Data-driven testing](https://en.wikipedia.org/wiki/Data-driven_testing))
+are used to run the same test once for each set of parameters.
+`Parameters` defines a block of parameters.
 
 ```sh
 Describe 'example'
@@ -1405,12 +1436,12 @@ Describe 'example'
 End
 ```
 
-In addition to the default `Parameters`, three styles are supported:
+In addition to the default `Parameters` block, three additional styles are supported:
 `Parameters:value`, `Parameters:matrix` and `Parameters:dynamic`.
 
 See more details of [Parameters](docs/references.md#parameters)
 
-NOTE: You can also cooperate the `Parameters` and `Data:expand` helpers.
+NOTE: You can also combine the `Parameters` and `Data:expand` helpers.
 
 #### `Mock` - create a command-based mock
 
@@ -1505,7 +1536,7 @@ This is the same as `sleep`, but it can be used in the sandbox mode because the 
 
 ### `%preserve` - preserve variables
 
-Use `%preserve` directive to preserve the variables in subshells and external shell script.
+Use the `%preserve` directive to preserve the variables in subshells and external shell scripts.
 
 In the following cases, `%preserve` is required because variables are not preserved.
 
@@ -1534,7 +1565,7 @@ Output log messages to the log file (default: `/dev/tty`) for debugging.
 
 ### `%data` - define parameter
 
-See `Parameters`.
+See [Parameters:dynamic](docs/references.md#parametersdynamic).
 
 ## Mocking
 
@@ -1544,7 +1575,7 @@ Both can be overwritten with an internal block and will be restored when the blo
 
 ### Function-based mock
 
-The (shell) function-based mock is simply (re)defined with shell function.
+The (shell) function-based mock is simply (re)defined with a shell function.
 
 ```sh
 Describe 'function-based mock'
@@ -1567,7 +1598,7 @@ The (external) command-based mock creates a temporary mock shell script and runs
 This is slow, but there are some advantages over the function-based mock.
 
 - Can be use invalid characters as the shell function name.
-  - e.g `docker-compose` (`-` cannot be used as a function name in POSIX)
+  - e.g. `docker-compose` (`-` cannot be used as a function name in POSIX)
 - Can be invoke a mocked command from an external command (not limited to shell script).
 
 A command-based mock creates an external shell script with the contents of a `Mock` block,
@@ -1614,7 +1645,7 @@ Describe "Support commands example"
   It "touch a file"
     When run touch "file"
     The output should eq "file was touched"
-    The file "file" should be exist
+    The file "file" should exist
   End
 End
 ```
@@ -1984,7 +2015,7 @@ It is a variable set by the system, and which unrelated to ShellSpec.
 ### `<module>_loaded`
 
 It is called after loading the shellspec's general internal functions,
-but before loading the core modules (subject, modifire, matcher, etc).
+but before loading the core modules (subject, modifier, matcher, etc).
 If parallel execution is enabled, it may be called multiple times in isolated processes.
 Internal functions starting with `shellspec_` can also be used, but be aware that they may change.
 
@@ -1994,7 +2025,7 @@ absolutely necessary, but if you have one, please let me know.
 
 ### `<module>_configure`
 
-This callback function will be called after core modules (subject, modifire, matcher, etc) has been loaded.
+This callback function will be called after core modules (subject, modifier, matcher, etc) has been loaded.
 If parallel execution is enabled, it may be called multiple times in isolated processes.
 Internal functions starting with `shellspec_` can also be used, but be aware that they may change.
 It can be used to set global hooks, load custom matchers, etc., and override core module functions.
@@ -2079,6 +2110,61 @@ See [examples/spec/support/custom_matcher.sh](examples/spec/support/custom_match
 NOTE: If you want to verify using shell function, you can use [result](docs/references.md#result) modifier or
 [satisfy](docs/references.md#satisfy) matcher. You don't need to create a custom matcher, etc.
 
+## Code Coverage
+
+ShellSpec has integrated coverage feature. To use this feature [Kcov][] (v35 or later) is required.
+
+[Kcov]: https://github.com/SimonKagstrom/kcov
+
+### Supported shells
+
+Supported only in **bash**, **zsh**, and **ksh**, where `DEBUG` trap is implemented.
+However, we recommend latest **bash** for the following reasons.
+
+- bash (older versions): There seems to be some code that cannot be measured correctly.
+- zsh: There seems to be some code that cannot be measured correctly, and the measurement rate will be the lowest.
+- ksh: ksh93u+ and ksh2020 may have side effects on exit status when DEBUG trap is enabled due to a bug.
+This bug has been [fixed](https://github.com/ksh93/ksh/issues/155) in [ksh93u+m](https://github.com/ksh93/ksh).
+These are also prone to instability, especially with ksh2020 (which has been abandoned).
+
+In any shell, some code may not be measured correctly (e.g., code containing `eval` or newline).
+These are limitations and problems caused by shells and Kcov.
+
+### Measurement target
+
+ShellSpec measures only the necessary codes to improve the measurement speed.
+Also, there are some things that cannot be measured due to implementation.
+
+- The shell scripts loaded by `Include` will be measured.
+- The shell functions called by the `When` evaluation will be measured.
+- The shell scripts executed by the `When run script` evaluation will be measured.
+- The shell scripts executed by the `When run source` evaluation will be measured.
+- The external commands executed by the `When` evaluation will NOT be measured.
+  - Even if it is a shell script, it is not measured when it is executed as an external command.
+- If other than the above, it will not be measured.
+
+By default only shell scripts whose names contain `.sh` are coverage targeted.
+If you want to include other files, you need to adjust options with `--kcov-options`.
+
+```sh
+# Default kcov (coverage) options
+--kcov-options "--include-path=. --path-strip-level=1"
+--kcov-options "--include-pattern=.sh"
+--kcov-options "--exclude-pattern=/.shellspec,/spec/,/coverage/,/report/"
+
+# Example: Include script "myprog" with no extension
+--kcov-options "--include-pattern=.sh,myprog"
+
+# Example: Only specified files/directories
+--kcov-options "--include-pattern=myprog,/lib/"
+```
+
+### Coverage report
+
+[Coverage report][coverage] and `cobertura.xml` and `sonarqube.xml` files are generated under the coverage directory by Kcov.
+You can easily integrate with [Coveralls](https://coveralls.io/), [Code Climate](https://codeclimate.com/),
+[Codecov](https://codecov.io/), etc.
+
 ## For developers
 
 ### Subprojects
@@ -2091,6 +2177,10 @@ URL: [https://github.com/shellspec/shellmetrics](https://github.com/shellspec/sh
 
 URL: [https://github.com/shellspec/shellbench](https://github.com/shellspec/shellbench)
 
+#### altshfmt - AltSH (alternative shell script) formatter
+
+URL: [https://github.com/shellspec/altshfmt](https://github.com/shellspec/altshfmt)
+
 ### Related projects
 
 #### getoptions - An elegant option parser and generator for shell scripts
@@ -2100,6 +2190,10 @@ URL: [https://github.com/ko1nksm/getoptions](https://github.com/ko1nksm/getoptio
 #### readlinkf - readlink -f implementation for shell scripts
 
 URL: [https://github.com/ko1nksm/readlinkf](https://github.com/ko1nksm/readlinkf)
+
+#### portable-echo - Portable echo shell function for POSIX compliant shells
+
+URL: [https://github.com/ko1nksm/portable-echo.sh](https://github.com/ko1nksm/portable-echo.sh)
 
 ### Inspired frameworks
 
@@ -2120,3 +2214,7 @@ reliability and portability, and the external commands allowed to use are greatl
 We recommend that you create WIP PR early or offer suggestions in discussions to avoid ruining your work.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+Author: Koichi Nakashima ([ko1nksm](https://github.com/ko1nksm))

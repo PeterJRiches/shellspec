@@ -1,0 +1,23 @@
+name: FreeBSD 13
+
+on: [push, pull_request]
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  freebsd-13:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
+    strategy:
+      matrix:
+        shells:
+          - {shell: sh}
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+    - uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        release: "13.3"
+        run: SH="${{ matrix.shells.shell }}" contrib/various_test.sh

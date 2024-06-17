@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
 
@@ -7,6 +7,7 @@ Describe "shellspec-init.sh"
 
   Describe "generate()"
     Context "when the specified file exists"
+      Before SHELLSPEC_CWD="$SHELLSPEC_PROJECT_ROOT"
       It "skips generating the file"
         When call generate "$FIXTURE/exist"
         The output should eq "   exist   $FIXTURE/exist"

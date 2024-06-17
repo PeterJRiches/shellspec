@@ -1,6 +1,9 @@
 #shellcheck shell=sh disable=SC2004
 
-[ "${ZSH_VERSION:-}" ] && setopt shwordsplit
+if [ "${ZSH_VERSION:-}" ]; then
+  setopt shwordsplit
+  zmodload zsh/mapfile 2>/dev/null ||:
+fi
 
 # shellcheck source=lib/general.sh
 . "${SHELLSPEC_LIB:-./lib}/general.sh"
@@ -66,9 +69,9 @@ find_specfiles() {
 }
 
 edit_in_place() {
-  if [ -e "$1" ]; then
-    eval 'shift; putsn "$("$@" < "'"$1"'")" > "'"$1"'"'
-  fi
+  [ -e "$1" ] || return 0
+  set -- "$1" "$(eval 'shift; "$@"' < "$1")"
+  putsn "$2" > "$1"
 }
 
 info() {

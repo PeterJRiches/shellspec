@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2004
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture"
 
@@ -58,7 +58,7 @@ Describe "libexec/runner.sh"
       Path tempdir="$dir"
       When call rmtempdir "$dir"
       The status should be success
-      The path tempdir should not be exist
+      The path tempdir should not exist
     End
   End
 

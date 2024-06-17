@@ -3,7 +3,7 @@
 shellspec() { echo '#'; }
 
 # Disable verbose_errexit by default for osh
-# shellcheck disable=SC2039
+# shellcheck disable=SC3044
 shopt -u verbose_errexit 2>/dev/null ||:
 
 # shellcheck source=lib/general.sh
@@ -77,6 +77,19 @@ shellspec_profile_wait() {
   echo '=' > "$SHELLSPEC_PROFILER_SIGNAL"
   while [ -s "$SHELLSPEC_PROFILER_SIGNAL" ]; do :; done
 }
+
+SHELLSPEC_XTRACE_ON='' SHELLSPEC_XTRACE_OFF=''
+
+if [ "$SHELLSPEC_DEFECT_XTRACE" = "2" ]; then
+  SHELLSPEC_XTRACE_ON='typeset -ft $(typeset +f); '
+  SHELLSPEC_XTRACE_OFF='typeset +ft $(typeset +f); '
+else
+  if [ "$SHELLSPEC_XTRACEFD_VAR" ]; then
+    SHELLSPEC_XTRACE_ON="$SHELLSPEC_XTRACEFD_VAR=\$SHELLSPEC_XTRACEFD; "
+  fi
+fi
+SHELLSPEC_XTRACE_ON="${SHELLSPEC_XTRACE_ON}set -x"
+SHELLSPEC_XTRACE_OFF=": @SHELLSPEC_XTRACE_OFF@; ${SHELLSPEC_XTRACE_OFF}set +x"
 
 #shellcheck disable=SC2034
 case $- in

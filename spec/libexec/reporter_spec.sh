@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2004,SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % FILE: "$SHELLSPEC_HELPERDIR/fixture/time_log.txt"
 % PROFILER_LOG: "$SHELLSPEC_HELPERDIR/fixture/profiler/profiler.log"
@@ -28,10 +28,11 @@ Describe "libexec/reporter.sh"
   Describe "read_time_log()"
     Before "prefix_real=0 prefix_user=0 prefix_sys=0"
     It "does not read anything if file missing"
-      When call read_time_log prefix "$FILE.not-exits"
+      When call read_time_log prefix "$FILE.not-exists"
       The variable prefix_real should eq ''
       The variable prefix_user should eq ''
       The variable prefix_sys should eq ''
+      The variable prefix_type should eq ''
       The status should be failure
     End
 
@@ -40,6 +41,7 @@ Describe "libexec/reporter.sh"
       The variable prefix_real should equal 1.23
       The variable prefix_user should equal 0.11
       The variable prefix_sys should equal 12.45
+      The variable prefix_type should equal external
       The status should be success
     End
   End
@@ -425,13 +427,14 @@ Describe "libexec/reporter.sh"
 
   Describe "tssv_parse()"
     # shellcheck disable=SC2034
-    RS=$SHELLSPEC_RS US=$SHELLSPEC_US
+    RS=$SHELLSPEC_RS US=$SHELLSPEC_US ETB=$SHELLSPEC_ETB
 
     Data:expand
-      #|${RS}field1:a${US}field2:b${US}field3:c
+      #|${RS}field1:a${US}field2:b${US}field3:c${ETB}
       #|${RS}field1:A${US}field2:B${US}field3:C
-      #|C'
-      #|${RS}field1:1${US}field2:2${US}field3:3
+      #|C'${ETB}
+      #|test
+      #|${RS}field1:1${US}field2:2${US}field3:3${ETB}
     End
 
     init() {
@@ -440,6 +443,7 @@ Describe "libexec/reporter.sh"
 
     callback() {
       echo "$prefix_field1 $prefix_field2 $prefix_field3" ":" "$@"
+      # shellcheck disable=SC2004
       count=$(($count + 1))
     }
 
@@ -450,7 +454,8 @@ Describe "libexec/reporter.sh"
       The line 1 should eq "a b c : field1 field2 field3"
       The line 2 should eq "A B C"
       The line 3 should eq "C' : field1 field2 field3"
-      The line 4 should eq "1 2 3 : field1 field2 field3"
+      The line 4 should eq "test"
+      The line 5 should eq "1 2 3 : field1 field2 field3"
       The variable count should eq 3
     End
 
@@ -461,6 +466,7 @@ Describe "libexec/reporter.sh"
       The line 2 should be undefined
       The line 3 should be undefined
       The line 4 should be undefined
+      The line 5 should be undefined
       The variable count should eq 1
       The status should eq 12
     End

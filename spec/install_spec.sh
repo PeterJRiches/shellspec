@@ -1,4 +1,4 @@
-#shellcheck shell=sh disable=SC2016
+# shellcheck shell=sh disable=SC2016,SC2286,SC2287,SC2288
 
 % BIN: "$SHELLSPEC_HELPERDIR/fixture/bin"
 % FIXTURE: "$SHELLSPEC_HELPERDIR/fixture/install"
@@ -130,7 +130,7 @@ Describe "./install.sh"
 
       It 'fetchs archive'
         When call fetch "http://repo.test/b3d5591.tar.gz" "$TMPBASE/curl"
-        The file "$TMPBASE/curl/README.md" should be exist
+        The file "$TMPBASE/curl/README.md" should exist
         The stderr should be defined # ignore stderr
       End
     End
@@ -146,7 +146,7 @@ Describe "./install.sh"
 
       It 'fetchs archive'
         When call fetch "http://repo.test/b3d5591.tar.gz" "$TMPBASE/wget"
-        The file "$TMPBASE/wget/README.md" should be exist
+        The file "$TMPBASE/wget/README.md" should exist
         The stderr should be defined # ignore stderr
       End
     End
@@ -158,7 +158,7 @@ Describe "./install.sh"
 
       It 'does not create directory'
         When call fetch "http://repo.test/b3d5591.tar.gz" "$TMPBASE/error"
-        The directory "$TMPBASE/error" should not be exist
+        The directory "$TMPBASE/error" should not exist
         The status should be failure
       End
     End

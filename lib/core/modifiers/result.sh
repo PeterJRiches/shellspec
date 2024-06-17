@@ -24,10 +24,15 @@ shellspec_modifier_result() {
     unset SHELLSPEC_SUBJECT ||:
   fi
 
-  eval shellspec_syntax_dispatch modifier ${1+'"$@"'}
+  case $# in
+    0) shellspec_syntax_dispatch modifier ;;
+    *) shellspec_syntax_dispatch modifier "$@" ;;
+  esac
 }
 
 shellspec_modifier_result_invoke() {
+  shellspec_readfile_once SHELLSPEC_STDOUT "$SHELLSPEC_STDOUT_FILE"
+  shellspec_readfile_once SHELLSPEC_STDERR "$SHELLSPEC_STDERR_FILE"
   set -- "${SHELLSPEC_STDOUT:-}" "${SHELLSPEC_STDERR:-}" "${SHELLSPEC_STATUS:-}"
   if [ -e "$SHELLSPEC_STDOUT_FILE" ]; then
     ( "$SHELLSPEC_SUBJECT" "$@" < "$SHELLSPEC_STDOUT_FILE" )

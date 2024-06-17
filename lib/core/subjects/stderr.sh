@@ -8,6 +8,7 @@ shellspec_syntax_alias 'shellspec_subject_entire_error' 'shellspec_subject_entir
 shellspec_subject_stderr() {
   # shellcheck disable=SC2034
   SHELLSPEC_META='text'
+  shellspec_readfile_once SHELLSPEC_STDERR "$SHELLSPEC_STDERR_FILE"
   if [ ${SHELLSPEC_STDERR+x} ]; then
     # shellcheck disable=SC2034
     SHELLSPEC_SUBJECT=$SHELLSPEC_STDERR
@@ -18,12 +19,16 @@ shellspec_subject_stderr() {
 
   shellspec_off UNHANDLED_STDERR
 
-  eval shellspec_syntax_dispatch modifier ${1+'"$@"'}
+  case $# in
+    0) shellspec_syntax_dispatch modifier ;;
+    *) shellspec_syntax_dispatch modifier "$@" ;;
+  esac
 }
 
 shellspec_subject_entire_stderr() {
   # shellcheck disable=SC2034
   SHELLSPEC_META='text'
+  shellspec_readfile_once SHELLSPEC_STDERR "$SHELLSPEC_STDERR_FILE"
   if [ ${SHELLSPEC_STDERR+x} ]; then
     # shellcheck disable=SC2034
     SHELLSPEC_SUBJECT=$SHELLSPEC_STDERR
@@ -33,5 +38,8 @@ shellspec_subject_entire_stderr() {
 
   shellspec_off UNHANDLED_STDERR
 
-  eval shellspec_syntax_dispatch modifier ${1+'"$@"'}
+  case $# in
+    0) shellspec_syntax_dispatch modifier ;;
+    *) shellspec_syntax_dispatch modifier "$@" ;;
+  esac
 }

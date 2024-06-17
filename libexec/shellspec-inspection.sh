@@ -47,6 +47,15 @@ if [ "${ZSH_VERSION:-}" ] && zshexit; then
   echo "SHELLSPEC_DEFECT_ZSHEXIT=1"
 fi
 
+set +e
+(set -e; false; :) 2>/dev/null
+# shellcheck disable=SC2181
+if [ $? -eq 0 ] && [ ! "${POSH_VERSION:-}" ]; then
+  # bosh <= 2020/03/25
+  echo "SHELLSPEC_DEFECT_BOSHEXIT=1"
+fi
+set -e
+
 # Workaround for posh 0.8.5
 if [ ! "$(kill -l 2 2>/dev/null)" = "INT" ]; then
   # Workaround for procps-ng kill
@@ -71,12 +80,15 @@ fi
 set -e
 
 SHELLSPEC_CLONE_TYPE="posix"
-# shellcheck disable=SC2039
+# shellcheck disable=SC3044
 if typeset >/dev/null 2>&1; then
-  # shellcheck disable=SC2034
   set -- "$(var=data; typeset -p var 2>/dev/null ||:)" ||:
   if [ ! "${1#*data}" = "$1" ]; then
-    [ "${BASH_VERSION:-}" ] && SHELLSPEC_CLONE_TYPE=bash
+    if [ "${BASH_VERSION:-}" ]; then
+      SHELLSPEC_CLONE_TYPE=bash OLDIFS=$IFS
+      eval "$(typeset -p IFS)"
+      [ "$OLDIFS" = "$IFS" ] || SHELLSPEC_CLONE_TYPE=old_bash IFS=$OLDIFS
+    fi
     [ "${ZSH_VERSION:-}" ] && SHELLSPEC_CLONE_TYPE=zsh
     [ "${YASH_VERSION:-}" ] && SHELLSPEC_CLONE_TYPE=yash
     [ "${KSH_VERSION:-}" ] && SHELLSPEC_CLONE_TYPE=ksh
@@ -102,11 +114,26 @@ if "${0%/*}/shellspec-shebang" 2>/dev/null; then
   echo "SHELLSPEC_SHEBANG_MULTIARG=1"
 fi
 
-# shellcheck disable=SC2039,SC3047
-if (trap '' DEBUG) 2>/dev/null; then
+set +e
+(
+  # shellcheck disable=SC3045
+  ulimit -t unlimited || exit 1
+
+  # shellcheck disable=SC3047
+  trap '' DEBUG || exit 1
   echo "SHELLSPEC_DEBUG_TRAP=1"
   echo "SHELLSPEC_KCOV_COMPATIBLE_SHELL=1"
-fi
+
+  # Workaround for ksh93u+ and ksh2020 (fixed in ksh93u+m)
+  # shellcheck disable=SC3047
+  trap ':' DEBUG
+  # shellcheck disable=SC2034
+  r=$(exit 123)
+  if [ $? -ne 123 ]; then
+    echo "SHELLSPEC_DEFECT_DEBUGXS=1"
+  fi
+) 2>/dev/null
+set -e
 
 case $PWD in ([a-zA-Z]:* | //*)
   echo "SHELLSPEC_BUSYBOX_W32=1"
@@ -120,37 +147,79 @@ set_path() {
   PATH="$1"
 }
 
-# shellcheck disable=SC2123
-set_path /
-if [ "$SHELLSPEC_SANDBOX" ] && ! $SHELLSPEC_SHELL -c ":" 2>/dev/null; then
-  # busybox ash on cygwin
-  echo "SHELLSPEC_DEFECT_SANDBOX=1"
+run_with_path() {
+  current_path=$PATH xs=0
+  set_path "$1"
+  shift
+  "$@" || xs=$?
+  PATH=$current_path
+  return $xs
+}
+
+run_builtin() {
+  run_with_path /dev/null "$@"
+}
+
+if [ "$SHELLSPEC_SANDBOX" ]; then
+  # shellcheck disable=SC2086
+  if ! run_with_path / $SHELLSPEC_SHELL -c ":" 2>/dev/null; then
+    # busybox ash on cygwin
+    echo "SHELLSPEC_DEFECT_SANDBOX=1"
+  fi
 fi
 
-set_path ""
-if printf '' 2>/dev/null; then
+if run_builtin printf '' 2>/dev/null; then
   echo "SHELLSPEC_BUILTIN_PRINTF=1"
 fi
-if print -nr -- '' 2>/dev/null; then
+if run_builtin print -nr -- '' 2>/dev/null; then
   echo "SHELLSPEC_BUILTIN_PRINT=1"
 fi
 
 typesetf_check() { :; }
-# shellcheck disable=SC2034,SC2039
-if typeset -f typesetf_check >/dev/null 2>&1; then
+# shellcheck disable=SC3044
+if run_builtin typeset -f typesetf_check >/dev/null 2>&1; then
   echo "SHELLSPEC_BUILTIN_TYPESETF=1"
 fi
 
-if type shopt >/dev/null 2>&1; then
+if run_builtin shopt >/dev/null 2>&1; then
   echo "SHELLSPEC_SHOPT_AVAILABLE=1"
-  # shellcheck disable=SC2039
+  # shellcheck disable=SC3044
   if shopt -s failglob 2>/dev/null; then
     echo "SHELLSPEC_FAILGLOB_AVAILABLE=1"
   fi
 fi
 
-if setopt NO_NOMATCH >/dev/null 2>&1; then
+if run_builtin setopt NO_NOMATCH >/dev/null 2>&1; then
   echo "SHELLSPEC_NOMATCH_AVAILABLE=1"
+fi
+
+# shellcheck disable=SC2034,SC3022
+if ( exec {fd}>/dev/null ) 2>/dev/null; then
+  echo "SHELLSPEC_FDVAR_AVAILABLE=1"
+fi
+
+# shellcheck disable=SC3044
+if run_builtin readarray </dev/null 2>/dev/null; then
+  echo "SHELLSPEC_BUILTIN_READARRAY=1"
+fi
+
+string=''
+# shellcheck disable=SC3024
+if string+="concat" 2>/dev/null; then
+  echo "SHELLSPEC_STRING_CONCAT=1"
+fi
+
+if ( eval '{ : <#((0)); } <<<:' ) 2>/dev/null; then
+  echo "SHELLSPEC_SEEKABLE=1"
+fi
+
+line=''
+# shellcheck disable=SC3045
+read -r -d "" line <<'HERE' 2>/dev/null ||:
+a\b
+HERE
+if [ "$line" = 'a\b' ]; then
+  echo "SHELLSPEC_READ_DELIM=1"
 fi
 
 #shellcheck disable=SC2034

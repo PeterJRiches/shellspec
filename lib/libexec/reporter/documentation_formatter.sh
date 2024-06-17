@@ -7,6 +7,7 @@ create_buffers documentation
 require_formatters methods conclusion finished summary references profiler
 [ "$SHELLSPEC_KCOV" ] && require_formatters kcov
 
+# shellcheck disable=SC2295
 documentation_each() {
   _id='' _current_id='' _description='' _indent=''
   _last_id=$documentation_last_id
@@ -35,7 +36,11 @@ documentation_each() {
       fi
 
       set -- "${_indent}${field_color}${_description}"
-      [ "$example_index" ] && set -- "$@" "($field_note - $example_index)"
+      case "${field_note:+x}:${example_index:+x}" in
+        x:x) set -- "$@" "($field_note - $example_index)" ;;
+        x:) set -- "$@" "($field_note)" ;;
+        :x) set -- "$@" "($example_index)" ;;
+      esac
       documentation '+=' "${*:-}${RESET}${LF}"
   esac
 
